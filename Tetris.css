@@ -1,0 +1,16 @@
+body {
+  background-color: white;
+}
+td {
+  width: 14px;
+  height: 14px;
+  background-color: whitesmoke;
+}
+#gameField {
+  margin-left: 20px;
+  margin-top: 20px;
+  float: left;
+}
+div{
+  color:azure;
+}

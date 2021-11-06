@@ -1,0 +1,463 @@
+var y, x; // current block loaction
+var currBlock;
+var currShape;
+var currDir;
+
+var gravity;
+var DAS;
+var ARR;
+
+var MY = 50,
+  MX = 10; // field size
+var VY = 22,
+  VX = 10; // displayed size
+var SY = 20,
+  SX = 4; // starting point
+var blockShape = [
+  [
+    [0, 0],
+    [0, -1],
+    [0, 1],
+    [0, 2],
+  ],
+  [
+    [0, 0],
+    [1, -1],
+    [0, -1],
+    [0, 1],
+  ],
+  [
+    [0, 0],
+    [0, -1],
+    [0, 1],
+    [1, 1],
+  ],
+  [
+    [0, 0],
+    [1, 0],
+    [1, 1],
+    [0, 1],
+  ],
+  [
+    [0, 0],
+    [0, -1],
+    [1, 0],
+    [1, 1],
+  ],
+  [
+    [0, 0],
+    [0, -1],
+    [1, 0],
+    [0, 1],
+  ],
+  [
+    [0, 0],
+    [1, -1],
+    [1, 0],
+    [0, 1],
+  ],
+]; //현재위치에 대한 상대적 좌표 ...  y, x
+var offset = [
+  [
+    [
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+    ],
+    [
+      [0, 0],
+      [1, 0],
+      [1, -1],
+      [0, 2],
+      [1, 2],
+    ],
+    [
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+    ],
+    [
+      [0, 0],
+      [-1, 0],
+      [-1, -1],
+      [0, 2],
+      [-1, 2],
+    ],
+  ],
+  [
+    [
+      [0, 0],
+      [-1, 0],
+      [2, 0],
+      [-1, 0],
+      [2, 0],
+    ],
+    [
+      [-1, 0],
+      [0, 0],
+      [0, 0],
+      [0, 1],
+      [0, -2],
+    ],
+    [
+      [-1, 1],
+      [1, 1],
+      [-2, 1],
+      [1, 0],
+      [-2, 0],
+    ],
+    [
+      [0, 1],
+      [0, 1],
+      [0, 1],
+      [0, -1],
+      [0, 2],
+    ],
+  ],
+  [
+    [
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+      [0, 0],
+    ],
+    [
+      [0, -1],
+      [0, -1],
+      [0, -1],
+      [0, -1],
+      [0, -1],
+    ],
+    [
+      [-1, -1],
+      [-1, -1],
+      [-1, -1],
+      [-1, -1],
+      [-1, -1],
+    ],
+    [
+      [-1, 0],
+      [-1, 0],
+      [-1, 0],
+      [-1, 0],
+      [-1, 0],
+    ],
+  ],
+]; //wall kick 처리 ... 편의상 x, y 로 작성됨
+var blockColor = ['cyan', 'blue', 'orange', 'yellow', 'green', 'purple', 'red'];
+var tileColor = 'whitesmoke';
+
+var fallingThread, gravity;
+var movingThread, DAS, ARR;
+var countThread, lockDelay;
+var gameField;
+
+var nextBlockQueue = new Array();
+var holdedBlock;
+var holdUsed;
+
+//키 입력 처리
+document.onkeydown = keyDownEventHandler;
+function keyDownEventHandler(e) {
+  switch (e.keyCode) {
+    case 83: // s
+      setTimeout('moveDown()', gravity);
+      break;
+    case 37: // left
+      setTimeout('moveLR(-1)', 0);
+      break;
+    case 39: // right
+      setTimeout('moveLR(1)', 0);
+      break;
+    case 40: // down
+      softDrop(true);
+      break;
+    case 88: // z
+      setTimeout('roatateClockwise(1)', 0);
+      break;
+    case 90: // x
+      setTimeout('roatateClockwise(3)', 0);
+      break;
+    case 32: // spacebar
+      setTimeout('hardDrop()', 0);
+      break;
+    case 16: // shift
+      setTimeout('holdBlock()', 0);
+      break;
+  }
+}
+
+//키 해제 처리
+document.onkeyup = keyUpEventHandler;
+function keyUpEventHandler(e) {
+  switch (e.keyCode) {
+    case 40:
+      softDrop(false);
+      break;
+  }
+}
+
+init();
+
+//table 호출
+function cell(y, x) {
+  return document.getElementById(String(y) + ' ' + String(x));
+}
+
+function lockDelayCount() {
+  if (lockDelay > 100) {
+    clearTimeout(fallingThread);
+    clearTimeout(lockDelayCount);
+    stackBlock();
+  } else {
+    if (!canMove(currShape, -1, 0)) {
+      lockDelay++;
+      console.log(lockDelay);
+    }
+    countThread = setTimeout('lockDelayCount()', 10);
+  }
+}
+
+//초기화
+function init() {
+  initField();
+  drawField();
+  setNextBag();
+  setBlock();
+  holdedBlock = -1;
+  holdUsed = false;
+  gravity = 500;
+}
+function initField() {
+  gameField = new Array(MY);
+  for (var i = 0; i < MY; i++) {
+    gameField[i] = new Array(MX);
+    for (var j = 0; j < MX; j++) {
+      gameField[i][j] = -1;
+    }
+  }
+}
+function drawField() {
+  var fieldTag = '<table id="gameTable" border=0>';
+  for (var i = VY - 1; i >= 0; i--) {
+    fieldTag += '<tr>';
+    for (var j = 0; j < VX; j++)
+      fieldTag += '<td id="' + String(i) + ' ' + String(j) + '"></td>';
+    fieldTag += '</tr>';
+  }
+  document.write(fieldTag);
+}
+
+//줄 지우기
+function isFull(i) {
+  for (var j = 0; j < MX; j++) if (gameField[i][j] == -1) return false;
+  return true;
+}
+function singleLineClear(fullIdx) {
+  for (var i = fullIdx; i < MY - 1; i++) gameField[i] = gameField[i + 1];
+}
+function lineClear() {
+  var fullLineExist = false;
+  for (var i = y - 2; i <= y + 2; i++) {
+    if (isInBound(i, 0)) {
+      while (isFull(i)) {
+        singleLineClear(i);
+        fullLineExist = true;
+      }
+    }
+  }
+  if (fullLineExist) updateField();
+}
+function updateField() {
+  for (var i = 0; i < VY; i++)
+    for (var j = 0; j < VX; j++) {
+      var cellValue = gameField[i][j];
+      var cellColor = cellValue == -1 ? tileColor : blockColor[cellValue];
+      cell(i, j).style.background = cellColor;
+    }
+}
+
+//홀드
+function holdBlock() {
+  clearTimeout(fallingThread);
+  clearTimeout(lockDelayCount);
+  clearBlock();
+  if (holdedBlock != -1) nextBlockQueue.unshift(holdedBlock);
+  holdedBlock = currBlock;
+  holdUsed = true;
+  setBlock();
+}
+
+//하드드롭
+function hardDrop() {
+  clearTimeout(fallingThread);
+  clearTimeout(countThread);
+  var dy = 0;
+  while (canMove(currShape, dy - 1, 0)) dy--;
+  clearBlock();
+  y += dy;
+  displayBlock();
+  stackBlock();
+}
+
+//소프트드롭
+function softDrop(isOn) {
+  if (isOn) gravity = 100;
+  else gravity = 500;
+}
+
+//블록 스택
+function stackBlock() {
+  for (var i = 0; i < 4; i++) {
+    var by = y + currShape[i][0];
+    var bx = x + currShape[i][1];
+    gameField[by][bx] = currBlock;
+  }
+  holdUsed = false;
+  lineClear();
+  setBlock();
+}
+
+//블록 회전
+function roatateClockwise(cnt) {
+  var nextDir = (currDir + cnt) % 4;
+  var index = currBlock == 0 ? 1 : currBlock == 3 ? 2 : 0;
+  var nextShape = rotateShape_N(currShape, cnt);
+  for (var i = 0; i < 5; i++) {
+    var dy = offset[index][currDir][i][1] - offset[index][nextDir][i][1];
+    var dx = offset[index][currDir][i][0] - offset[index][nextDir][i][0];
+    if (canMove(nextShape, dy, dx)) {
+      clearBlock();
+      y += dy;
+      x += dx;
+      currShape = nextShape;
+      currDir = nextDir;
+      displayBlock();
+      break;
+    }
+  }
+}
+function rotateShape_N(shape, cnt) {
+  for (var i = 0; i < cnt; i++) shape = rotateShape(shape);
+  return shape;
+}
+function rotateShape(shape) {
+  var ret = new Array(4);
+  for (var i = 0; i < 4; i++) {
+    var tmp = new Array(2);
+    tmp[0] = -shape[i][1];
+    tmp[1] = shape[i][0];
+    ret[i] = tmp;
+  }
+  return ret;
+}
+
+function setBlock() {
+  y = SY;
+  x = SX;
+  currDir = 0;
+  currBlock = nextBlockQueue[0];
+  currShape = blockShape[currBlock];
+  displayBlock();
+  if (gameoverCheck()) gameover();
+  nextBlockQueue.shift();
+  if (nextBlockQueue.length < 7) setNextBag();
+  fallingThread = setTimeout('moveDown()', gravity);
+  lockDelay = 0;
+  countThread = setTimeout('lockDelayCount()', 10);
+}
+
+//블록 낙하
+function moveDown() {
+  if (canMove(currShape, -1, 0)) {
+    clearBlock();
+    y--;
+    displayBlock();
+  }
+  fallingThread = setTimeout('moveDown()', gravity);
+}
+
+//블록 좌우이동
+function moveLR(dir) {
+  if (canMove(currShape, 0, dir)) {
+    clearBlock();
+    x += dir;
+    displayBlock();
+  }
+}
+
+//이동 가능 여부 확인
+function isInBound(y, x) {
+  return y < MY && y >= 0 && x < MX && x >= 0;
+}
+function isValid(y, x) {
+  return isInBound(y, x) && gameField[y][x] == -1;
+}
+function canMove(shape, dy, dx) {
+  for (var i = 0; i < 4; i++) {
+    var by = y + dy + shape[i][0];
+    var bx = x + dx + shape[i][1];
+    if (!isValid(by, bx)) return false;
+  }
+  return true;
+}
+
+//현재 위치 블록 미표시 및 표시
+function isInField(y, x) {
+  return y < VY && y >= 0 && x < VX && x >= 0;
+}
+function clearBlock() {
+  for (var i = 0; i < 4; i++) {
+    var by = y + currShape[i][0];
+    var bx = x + currShape[i][1];
+    if (isInField(by, bx)) cell(by, bx).style.background = tileColor;
+  }
+}
+function displayBlock() {
+  for (var i = 0; i < 4; i++) {
+    var by = y + currShape[i][0];
+    var bx = x + currShape[i][1];
+    if (isInField(by, bx))
+      cell(by, bx).style.background = blockColor[currBlock];
+  }
+}
+
+//랜덤 가방 생성 및 다음 가방 설정
+function generateBag() {
+  var randPerm = new Array(7);
+  var used = new Array(7).fill(false);
+  for (var i = 7; i >= 1; i--) {
+    var cnt = Math.floor(Math.random() * i);
+    for (var sel = 0; sel < 7; sel++) {
+      if (used[sel]) continue;
+      else if (cnt-- == 0) {
+        randPerm[7 - i] = sel;
+        used[sel] = true;
+        break;
+      }
+    }
+  }
+  return randPerm;
+}
+function setNextBag() {
+  var nextBag = generateBag();
+  for (var i = 0; i < 7; i++) {
+    nextBlockQueue.push(nextBag[i]);
+  }
+}
+
+// 게임오버
+function gameoverCheck() {
+  if (canMove(currShape, 0, 0)) return false;
+  else return true;
+}
+function gameover() {
+  alert('[Game Over]');
+  init();
+  location.reload();
+}
