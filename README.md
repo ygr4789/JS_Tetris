@@ -1,3 +1,3 @@
-# web-platform-6ea5wt
+# vanillaJS Tetris
 
-[Edit on StackBlitz ⚡️](https://stackblitz.com/edit/web-platform-6ea5wt)
+[Play here ⚡️](https://ygr4789.github.io/JS_Tetris/Tetris)

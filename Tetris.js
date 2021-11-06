@@ -3,9 +3,10 @@ var currBlock;
 var currShape;
 var currDir;
 
-var gravity;
-var DAS;
-var ARR;
+var GRV = 500, // gravity
+  SDF = 100; // softdrop speed
+var DAS = 133, // delayed auto shift
+  ARR = 10; //auto repeat rate
 
 var MY = 50,
   MX = 10; // field size
@@ -152,8 +153,8 @@ var offset = [
 var blockColor = ['cyan', 'blue', 'orange', 'yellow', 'green', 'purple', 'red'];
 var tileColor = 'whitesmoke';
 
-var fallingThread, gravity;
-var movingThread, DAS, ARR;
+var fallingThread, fallingSpeed;
+var movingThread;
 var countThread, lockDelay;
 var gameField;
 
@@ -166,7 +167,7 @@ document.onkeydown = keyDownEventHandler;
 function keyDownEventHandler(e) {
   switch (e.keyCode) {
     case 83: // s
-      setTimeout('moveDown()', gravity);
+      setTimeout('moveDown()', fallingSpeed);
       break;
     case 37: // left
       setTimeout('moveLR(-1)', 0);
@@ -215,10 +216,7 @@ function lockDelayCount() {
     clearTimeout(lockDelayCount);
     stackBlock();
   } else {
-    if (!canMove(currShape, -1, 0)) {
-      lockDelay++;
-      console.log(lockDelay);
-    }
+    if (!canMove(currShape, -1, 0)) lockDelay++;
     countThread = setTimeout('lockDelayCount()', 10);
   }
 }
@@ -231,7 +229,7 @@ function init() {
   setBlock();
   holdedBlock = -1;
   holdUsed = false;
-  gravity = 500;
+  fallingSpeed = GRV;
 }
 function initField() {
   gameField = new Array(MY);
@@ -307,8 +305,8 @@ function hardDrop() {
 
 //소프트드롭
 function softDrop(isOn) {
-  if (isOn) gravity = 100;
-  else gravity = 500;
+  if (isOn) fallingSpeed = SDF;
+  else fallingSpeed = GRV;
 }
 
 //블록 스택
@@ -367,7 +365,7 @@ function setBlock() {
   if (gameoverCheck()) gameover();
   nextBlockQueue.shift();
   if (nextBlockQueue.length < 7) setNextBag();
-  fallingThread = setTimeout('moveDown()', gravity);
+  fallingThread = setTimeout('moveDown()', fallingSpeed);
   lockDelay = 0;
   countThread = setTimeout('lockDelayCount()', 10);
 }
@@ -379,7 +377,7 @@ function moveDown() {
     y--;
     displayBlock();
   }
-  fallingThread = setTimeout('moveDown()', gravity);
+  fallingThread = setTimeout('moveDown()', fallingSpeed);
 }
 
 //블록 좌우이동
