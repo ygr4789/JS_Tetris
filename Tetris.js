@@ -225,6 +225,8 @@ function lockDelayCount() {
 function init() {
   initField();
   drawField();
+  drawHoldBox();
+  drawNextTable();
   setNextBag();
   setBlock();
   holdedBlock = -1;
@@ -235,9 +237,7 @@ function initField() {
   gameField = new Array(MY);
   for (var i = 0; i < MY; i++) {
     gameField[i] = new Array(MX);
-    for (var j = 0; j < MX; j++) {
-      gameField[i][j] = -1;
-    }
+    for (var j = 0; j < MX; j++) gameField[i][j] = -1;
   }
 }
 function drawField() {
@@ -249,7 +249,7 @@ function drawField() {
     fieldTag += '</tr>';
   }
   fieldTag += '</table>';
-  document.write(fieldTag);
+  document.getElementById('gameField').innerHTML = fieldTag;
 }
 function blockTag(name) {
   var ret = '<table id="' + name + '" border=0>';
@@ -268,12 +268,27 @@ function drawHoldBox() {
 function drawNextTable() {
   var tableTag = '';
   for (var i = 0; i < 5; i++) tableTag += blockTag('nextTable' + String(i));
+  console.log(tableTag);
   document.getElementById('nextTable').innerHTML = tableTag;
 }
 
 //홀드 및 넥스트 표시
-function displayHoldBox() {}
-function displayNextTable() {}
+function displayBlockInTable(name, blockNo) {
+  for (var i = 0; i < 2; i++)
+    for (var j = 0; j < 4; j++) cell(name, i, j).style.background = tileColor;
+  for (var i = 0; i < 4; i++) {
+    var by = blockShape[blockNo][i][0];
+    var bx = blockShape[blockNo][i][1] + 1;
+    cell(name, by, bx).style.background = blockColor[blockNo];
+  }
+}
+function displayHoldBox() {
+  displayBlockInTable('holdTable', holdedBlock);
+}
+function displayNextTable() {
+  for (var i = 0; i < 5; i++)
+    displayBlockInTable('nextTable' + String(i), nextBlockQueue[i]);
+}
 
 //줄 지우기
 function isFull(i) {
@@ -312,6 +327,7 @@ function holdBlock() {
   if (holdedBlock != -1) nextBlockQueue.unshift(holdedBlock);
   holdedBlock = currBlock;
   holdUsed = true;
+  displayHoldBox();
   setBlock();
 }
 
@@ -388,6 +404,7 @@ function setBlock() {
   displayBlock();
   if (gameoverCheck()) gameover();
   nextBlockQueue.shift();
+  displayNextTable();
   if (nextBlockQueue.length < 7) setNextBag();
   fallingThread = setTimeout('moveDown()', fallingSpeed);
   lockDelay = 0;
