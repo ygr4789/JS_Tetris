@@ -6,7 +6,7 @@ var currDir;
 var GRV = 500, // gravity
   SDF = 100; // softdrop speed
 var DAS = 133; // delayed auto shift
-  ARR = 10; //auto repeat rate
+ARR = 10; //auto repeat rate
 
 var MY = 50,
   MX = 10; // field size
@@ -206,8 +206,8 @@ function keyUpEventHandler(e) {
 init();
 
 //table 호출
-function cell(y, x) {
-  return document.getElementById(String(y) + ' ' + String(x));
+function cell(name, y, x) {
+  return document.getElementById(name + String(y) + String(x));
 }
 
 function lockDelayCount() {
@@ -245,11 +245,35 @@ function drawField() {
   for (var i = VY - 1; i >= 0; i--) {
     fieldTag += '<tr>';
     for (var j = 0; j < VX; j++)
-      fieldTag += '<td id="' + String(i) + ' ' + String(j) + '"></td>';
+      fieldTag += '<td id="' + 'gameTable' + String(i) + String(j) + '"></td>';
     fieldTag += '</tr>';
   }
+  fieldTag += '</table>';
   document.write(fieldTag);
 }
+function blockTag(name) {
+  var ret = '<table id="' + name + '" border=0>';
+  for (var i = 1; i >= 0; i--) {
+    ret += '<tr>';
+    for (var j = 0; j < 4; j++)
+      ret += '<td id="' + name + String(i) + String(j) + '"></td>';
+    ret += '</tr>';
+  }
+  ret += '</table>';
+  return ret;
+}
+function drawHoldBox() {
+  document.getElementById('holdBox').innerHTML = blockTag('holdTable');
+}
+function drawNextTable() {
+  var tableTag = '';
+  for (var i = 0; i < 5; i++) tableTag += blockTag('nextTable' + String(i));
+  document.getElementById('nextTable').innerHTML = tableTag;
+}
+
+//홀드 및 넥스트 표시
+function displayHoldBox() {}
+function displayNextTable() {}
 
 //줄 지우기
 function isFull(i) {
@@ -276,7 +300,7 @@ function updateField() {
     for (var j = 0; j < VX; j++) {
       var cellValue = gameField[i][j];
       var cellColor = cellValue == -1 ? tileColor : blockColor[cellValue];
-      cell(i, j).style.background = cellColor;
+      cell('gameTable', i, j).style.background = cellColor;
     }
 }
 
@@ -413,7 +437,8 @@ function clearBlock() {
   for (var i = 0; i < 4; i++) {
     var by = y + currShape[i][0];
     var bx = x + currShape[i][1];
-    if (isInField(by, bx)) cell(by, bx).style.background = tileColor;
+    if (isInField(by, bx))
+      cell('gameTable', by, bx).style.background = tileColor;
   }
 }
 function displayBlock() {
@@ -421,7 +446,7 @@ function displayBlock() {
     var by = y + currShape[i][0];
     var bx = x + currShape[i][1];
     if (isInField(by, bx))
-      cell(by, bx).style.background = blockColor[currBlock];
+      cell('gameTable', by, bx).style.background = blockColor[currBlock];
   }
 }
 
