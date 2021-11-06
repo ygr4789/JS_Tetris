@@ -5,7 +5,7 @@ var currDir;
 
 var GRV = 500, // gravity
   SDF = 100; // softdrop speed
-var DAS = 133, // delayed auto shift
+var DAS = 133; // delayed auto shift
   ARR = 10; //auto repeat rate
 
 var MY = 50,
