@@ -210,12 +210,15 @@ function cell(name, y, x) {
   return document.getElementById(name + String(y) + String(x));
 }
 
+//Lock Delay
+function lockDelayRecount() {
+  clearTimeout(countThread);
+  lockDelay = 0;
+  countThread = setTimeout('lockDelayCount()', 10);
+}
 function lockDelayCount() {
-  if (lockDelay > 100) {
-    clearTimeout(fallingThread);
-    clearTimeout(lockDelayCount);
-    stackBlock();
-  } else {
+  if (lockDelay > 100) stackBlock();
+  else {
     if (!canMove(currShape, -1, 0)) lockDelay++;
     countThread = setTimeout('lockDelayCount()', 10);
   }
@@ -322,7 +325,7 @@ function updateField() {
 //홀드
 function holdBlock() {
   clearTimeout(fallingThread);
-  clearTimeout(lockDelayCount);
+  clearTimeout(countThread);
   clearBlock();
   if (holdedBlock != -1) nextBlockQueue.unshift(holdedBlock);
   holdedBlock = currBlock;
@@ -333,8 +336,6 @@ function holdBlock() {
 
 //하드드롭
 function hardDrop() {
-  clearTimeout(fallingThread);
-  clearTimeout(countThread);
   var dy = 0;
   while (canMove(currShape, dy - 1, 0)) dy--;
   clearBlock();
@@ -351,6 +352,8 @@ function softDrop(isOn) {
 
 //블록 스택
 function stackBlock() {
+  clearTimeout(fallingThread);
+  clearTimeout(countThread);
   for (var i = 0; i < 4; i++) {
     var by = y + currShape[i][0];
     var bx = x + currShape[i][1];
@@ -375,6 +378,7 @@ function roatateClockwise(cnt) {
       x += dx;
       currShape = nextShape;
       currDir = nextDir;
+      lockDelayRecount();
       displayBlock();
       break;
     }
@@ -395,6 +399,7 @@ function rotateShape(shape) {
   return ret;
 }
 
+//다음 블록 출현
 function setBlock() {
   y = SY;
   x = SX;
@@ -424,6 +429,7 @@ function moveDown() {
 //블록 좌우이동
 function moveLR(dir) {
   if (canMove(currShape, 0, dir)) {
+    lockDelayRecount();
     clearBlock();
     x += dir;
     displayBlock();
