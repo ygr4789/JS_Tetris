@@ -3,8 +3,8 @@ var currBlock;
 var currShape;
 var currDir;
 
-var GRV = 500, // gravity
-  SDF = 100; // softdrop speed
+var GRV = 300, // gravity
+  SDF = 30; // softdrop speed
 var DAS = 133; // delayed auto shift
 ARR = 10; //auto repeat rate
 
@@ -14,191 +14,119 @@ var VY = 22,
   VX = 10; // displayed size
 var SY = 20,
   SX = 4; // starting point
-var blockShape = [
-  [
-    [0, 0],
-    [0, -1],
-    [0, 1],
-    [0, 2],
-  ],
-  [
-    [0, 0],
-    [1, -1],
-    [0, -1],
-    [0, 1],
-  ],
-  [
-    [0, 0],
-    [0, -1],
-    [0, 1],
-    [1, 1],
-  ],
-  [
-    [0, 0],
-    [1, 0],
-    [1, 1],
-    [0, 1],
-  ],
-  [
-    [0, 0],
-    [0, -1],
-    [1, 0],
-    [1, 1],
-  ],
-  [
-    [0, 0],
-    [0, -1],
-    [1, 0],
-    [0, 1],
-  ],
-  [
-    [0, 0],
-    [1, -1],
-    [1, 0],
-    [0, 1],
-  ],
-]; //현재위치에 대한 상대적 좌표 ...  y, x
-var offset = [
-  [
-    [
-      [0, 0],
-      [0, 0],
-      [0, 0],
-      [0, 0],
-      [0, 0],
+var blockShape = [ 
+  [[0, 0],[0, -1],[0, 1],[0, 2],],
+  [[0, 0],[1, -1],[0, -1],[0, 1],],
+  [[0, 0],[0, -1],[0, 1],[1, 1],],
+  [[0, 0],[1, 0],[1, 1],[0, 1],],
+  [[0, 0],[0, -1],[1, 0],[1, 1],],
+  [[0, 0],[0, -1],[1, 0],[0, 1],],
+  [[0, 0],[1, -1],[1, 0],[0, 1],],
+  ]; //현재위치에 대한 상대적 좌표 ...  y, x
+var offset = [[
+    [[0, 0],[0, 0],[0, 0],[0, 0],[0, 0],],
+    [[0, 0],[1, 0],[1, -1],[0, 2],[1, 2],],
+    [[0, 0],[0, 0],[0, 0],[0, 0],[0, 0],],
+    [[0, 0],[-1, 0],[-1, -1],[0, 2],[-1, 2],],
+    ],[
+    [[0, 0],[-1, 0],[2, 0],[-1, 0],[2, 0],],
+    [[-1, 0],[0, 0],[0, 0],[0, 1],[0, -2],],
+    [[-1, 1],[1, 1],[-2, 1],[1, 0],[-2, 0],],
+    [[0, 1],[0, 1],[0, 1],[0, -1],[0, 2],],
+    ],[
+    [[0, 0],[0, 0],[0, 0],[0, 0],[0, 0],],
+    [[0, -1],[0, -1],[0, -1],[0, -1],[0, -1],],
+    [[-1, -1],[-1, -1],[-1, -1],[-1, -1],[-1, -1],],
+    [[-1, 0],[-1, 0],[-1, 0],[-1, 0],[-1, 0],],
     ],
-    [
-      [0, 0],
-      [1, 0],
-      [1, -1],
-      [0, 2],
-      [1, 2],
-    ],
-    [
-      [0, 0],
-      [0, 0],
-      [0, 0],
-      [0, 0],
-      [0, 0],
-    ],
-    [
-      [0, 0],
-      [-1, 0],
-      [-1, -1],
-      [0, 2],
-      [-1, 2],
-    ],
-  ],
-  [
-    [
-      [0, 0],
-      [-1, 0],
-      [2, 0],
-      [-1, 0],
-      [2, 0],
-    ],
-    [
-      [-1, 0],
-      [0, 0],
-      [0, 0],
-      [0, 1],
-      [0, -2],
-    ],
-    [
-      [-1, 1],
-      [1, 1],
-      [-2, 1],
-      [1, 0],
-      [-2, 0],
-    ],
-    [
-      [0, 1],
-      [0, 1],
-      [0, 1],
-      [0, -1],
-      [0, 2],
-    ],
-  ],
-  [
-    [
-      [0, 0],
-      [0, 0],
-      [0, 0],
-      [0, 0],
-      [0, 0],
-    ],
-    [
-      [0, -1],
-      [0, -1],
-      [0, -1],
-      [0, -1],
-      [0, -1],
-    ],
-    [
-      [-1, -1],
-      [-1, -1],
-      [-1, -1],
-      [-1, -1],
-      [-1, -1],
-    ],
-    [
-      [-1, 0],
-      [-1, 0],
-      [-1, 0],
-      [-1, 0],
-      [-1, 0],
-    ],
-  ],
-]; //wall kick 처리 ... 편의상 x, y 로 작성됨
+  ]; //wall kick 구현 ... 편의상 x, y 로 작성됨
 var blockColor = ['cyan', 'blue', 'orange', 'yellow', 'green', 'purple', 'red'];
 var tileColor = 'whitesmoke';
 
 var fallingThread, fallingSpeed;
-var movingThread;
 var countThread, lockDelay;
 var gameField;
+
+var movingThread;
+var leftDASCharged, leftDASChargingThread;
+var rightDASCharged, rightDASChargingThread;
 
 var nextBlockQueue = new Array();
 var holdedBlock;
 var holdUsed;
 
+var keyPressed = new Array(256).fill(false);
+
 //키 입력 처리
 document.onkeydown = keyDownEventHandler;
 function keyDownEventHandler(e) {
-  switch (e.keyCode) {
-    case 83: // s
-      setTimeout('moveDown()', fallingSpeed);
-      break;
-    case 37: // left
-      setTimeout('moveLR(-1)', 0);
-      break;
-    case 39: // right
-      setTimeout('moveLR(1)', 0);
-      break;
-    case 40: // down
-      softDrop(true);
-      break;
-    case 88: // z
-      setTimeout('roatateClockwise(1)', 0);
-      break;
-    case 90: // x
-      setTimeout('roatateClockwise(3)', 0);
-      break;
-    case 32: // spacebar
-      setTimeout('hardDrop()', 0);
-      break;
-    case 16: // shift
-      setTimeout('holdBlock()', 0);
-      break;
+  if(!keyPressed[e.keyCode]){
+    keyPressed[e.keyCode] = true;
+    switch (e.keyCode) {
+      case 37: // left
+        clearTimeout(movingThread);
+        setTimeout(moveLR, 0, -1);
+        leftDASChargingThread = setTimeout(() => {
+          leftDASCharged = true;
+          movingThread = setTimeout(autoMoveLR, 0, -1);
+        }, DAS);
+        break;
+      case 39: // right
+        clearTimeout(movingThread);
+        setTimeout(moveLR, 0, 1);
+        rightDASChargingThread = setTimeout(() => {
+          rightDASCharged = true;
+          movingThread = setTimeout(autoMoveLR, 0, 1);
+        }, DAS);
+        break;
+      case 40: // down
+        clearTimeout(fallingThread);
+        softDrop(true);
+        fallingThread = setTimeout(moveDown(), 0);
+        break;
+      case 88: // z
+        setTimeout(roatateClockwise, 0, 1);
+        break;
+      case 90: // x
+        setTimeout(roatateClockwise, 0, 3);
+        break;
+      case 32: // spacebar
+        setTimeout(hardDrop, 0);
+        break;
+      case 16: // shift
+        setTimeout(holdBlock, 0);
+        break;
+    }
   }
 }
 
 //키 해제 처리
 document.onkeyup = keyUpEventHandler;
 function keyUpEventHandler(e) {
+  keyPressed[e.keyCode] = false;
   switch (e.keyCode) {
-    case 40:
+    case 37: // left
+      leftDASCharged = false;
+      clearTimeout(leftDASChargingThread);
+      clearTimeout(movingThread);
+      if(rightDASCharged) movingThread = setTimeout(autoMoveLR, DAS, 1);
+      break;
+    case 39: // right
+      rightDASCharged = false;
+      clearTimeout(rightDASChargingThread);
+      clearTimeout(movingThread);
+      if(leftDASCharged) movingThread = setTimeout(autoMoveLR, DAS, -1);
+      break;
+    case 40: // down
       softDrop(false);
+      break;
+    case 88: // z
+      break;
+    case 90: // x
+      break;
+    case 32: // spacebar
+      break;
+    case 16: // shift
       break;
   }
 }
@@ -214,13 +142,13 @@ function cell(name, y, x) {
 function lockDelayRecount() {
   clearTimeout(countThread);
   lockDelay = 0;
-  countThread = setTimeout('lockDelayCount()', 10);
+  countThread = setTimeout(lockDelayCount, 10);
 }
 function lockDelayCount() {
   if (lockDelay > 100) stackBlock();
   else {
     if (!canMove(currShape, -1, 0)) lockDelay++;
-    countThread = setTimeout('lockDelayCount()', 10);
+    countThread = setTimeout(lockDelayCount, 10);
   }
 }
 
@@ -271,7 +199,6 @@ function drawHoldBox() {
 function drawNextTable() {
   var tableTag = '';
   for (var i = 0; i < 5; i++) tableTag += blockTag('nextTable' + String(i));
-  console.log(tableTag);
   document.getElementById('nextTable').innerHTML = tableTag;
 }
 
@@ -411,9 +338,9 @@ function setBlock() {
   nextBlockQueue.shift();
   displayNextTable();
   if (nextBlockQueue.length < 7) setNextBag();
-  fallingThread = setTimeout('moveDown()', fallingSpeed);
+  fallingThread = setTimeout(moveDown, fallingSpeed);
   lockDelay = 0;
-  countThread = setTimeout('lockDelayCount()', 10);
+  countThread = setTimeout(lockDelayCount, 10);
 }
 
 //블록 낙하
@@ -423,7 +350,7 @@ function moveDown() {
     y--;
     displayBlock();
   }
-  fallingThread = setTimeout('moveDown()', fallingSpeed);
+  fallingThread = setTimeout(moveDown, fallingSpeed);
 }
 
 //블록 좌우이동
@@ -435,6 +362,11 @@ function moveLR(dir) {
     displayBlock();
   }
 }
+function autoMoveLR(dir) {
+  moveLR(dir);
+  movingThread = setTimeout(autoMoveLR, ARR, dir);
+}
+
 
 //이동 가능 여부 확인
 function isInBound(y, x) {
