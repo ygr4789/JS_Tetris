@@ -1,15 +1,32 @@
 body {
-  background-color: white;
+  margin: 20px;
+  background-color: #1B1D1F;
+}
+body>div {
+  float: left;
 }
 td {
   width: 14px;
   height: 14px;
-  background-color: whitesmoke;
+  border-radius: 2px;
 }
 table {
   margin: 10px;
 }
-div {
-  float: left;
-  color: azure;
+p {
+  background-color: white;
+  margin: 0px;
+  text-align: center;
+  font-family: 'Century Gothic';
+  font-weight: bold;
+  font-size: 12pt;
+  color: black;
+  line-height: 1.5;
+}
+#gameTable {
+  margin: 0px;
+}
+.coloumn {
+  border: 1px solid white;
+  border-top: 0px;
 }

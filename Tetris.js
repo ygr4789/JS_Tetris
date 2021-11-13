@@ -40,8 +40,16 @@ var offset = [[
     [[-1, 0],[-1, 0],[-1, 0],[-1, 0],[-1, 0],],
     ],
   ]; //wall kick 구현 ... 편의상 x, y 로 작성됨
-var blockColor = ['cyan', 'blue', 'orange', 'yellow', 'green', 'purple', 'red'];
-var tileColor = 'whitesmoke';
+var blockColor = [
+  '#0F9BD7', // 'cyan'
+  '#2141C6', // 'blue'
+  '#E35C02', // 'orange'
+  '#E39F02', // 'yellow' 
+  '#59B101', // 'green'
+  '#AF2989', // 'purple' 
+  '#D70F37'// 'red'
+  ];// I, J, L, O, S, T, Z 색상
+var tileColor = '#1B1D1F';
 
 var fallingThread, fallingSpeed;
 var countThread, lockDelay;
