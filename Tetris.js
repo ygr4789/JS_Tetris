@@ -6,12 +6,18 @@ var currDir;
 var T_spinRule1; // last maneuval is rotation
 var T_spinRule2; // last rotation kicked last offset
 
+var level = 1;
 var score;
 var spin;
 var combo;
 var totalClearedLines, clearedLines;
 var BtB, readyForBtB;
 
+var pointTable = [
+  [0, 100, 300, 500, 800],
+  [100, 200, 400],
+  [400, 800, 1200, 1600]
+  ];
 var spinText = [
   'ㅤ',
   'mini  T - SPIN',
@@ -25,8 +31,11 @@ var lineClearText = [
   'T E T R I S'
   ];
 
+var time;
+var timeCountingThread;
+
 var GRV = 300, // gravity
-  SDF = 30; // softdrop speed
+  SDF = GRV/10; // softdrop speed
 var DAS = 133; // delayed auto shift
 ARR = 10; //auto repeat rate
 
@@ -166,9 +175,18 @@ function keyUpEventHandler(e) {
 
 init();
 
-//table 호출
+//숫자 출력
+function fillLeadingZeros(num, width) {
+  var ret = String(num);
+  return ret.length >= width ? ret : new Array(width - ret.length + 1).join('0') + ret;
+}
+
+//HTML 호출
 function cell(name, y, x) {
   return document.getElementById(name + String(y) + String(x));
+}
+function changeContentOfId(id, content) {
+  document.getElementById(id).innerHTML = content;
 }
 
 //Lock Delay
@@ -192,12 +210,14 @@ function init() {
   totalClearedLines = 0;
   BtB = false;
   readyForBtB = false;
+  time = [0, 0, 0];
   initField();
   drawField();
   drawHoldBox();
   drawNextTable();
   setNextBag();
   setBlock();
+  timeCountingThread = setInterval(timeCount, 10);
   holdedBlock = -1;
   holdUsed = false;
   fallingSpeed = GRV;
@@ -238,6 +258,27 @@ function drawNextTable() {
   var tableTag = '';
   for (var i = 0; i < 5; i++) tableTag += blockTag('nextTable' + String(i));
   document.getElementById('nextTable').innerHTML = tableTag;
+}
+
+//시간 측정
+function timeCount() {
+  if(++time[2] == 100) {
+    time[2] = 0;
+    time[1]++;
+  }
+  if(time[1] == 60) {
+    time[1] = 0;
+    time[0]++;
+  }
+  changeContentOfId('time', timeText());
+}
+function timeText() {
+  var ret = '';
+  for(var i = 0; i < 3; i++) {
+     if(i > 0) ret += ' : ';
+     ret += fillLeadingZeros(time[i], 2);
+  }
+  return ret;
 }
 
 //홀드 및 넥스트 표시
@@ -310,6 +351,8 @@ function hardDrop() {
   clearBlock();
   y += dy;
   displayBlock();
+  score -= 2*dy;
+  scoreDisplay();
   stackBlock();
 }
 
@@ -333,6 +376,7 @@ function stackBlock() {
   clearedLines = lineClear();
   statCalculate();
   statDisplay();
+  scoringProcess();
   setBlock();
 }
 
@@ -356,34 +400,45 @@ function checkTspin() {
   else return 1;
 }
 
-//점수 및 상태 처리, 표시
+//상태 계산 및 표시
 function statCalculate() {
+  var difficult = spin != 0 || clearedLines == 4
   if(clearedLines == 0){
     combo = -1;
+    BtB = false;
   }
   else{
     combo++;
+    BtB = readyForBtB && difficult;
+    readyForBtB = difficult;
   }
-  var tmp = spin != 0 || clearedLines == 4
-  BtB = readyForBtB && tmp;
-  readyForBtB = tmp;
   totalClearedLines += clearedLines;
   T_spinRule1 = T_spinRule2 = false;
-}
-function plusCalculate() {
-  
-}
-function changeContentOfId(id, content) {
-  document.getElementById(id).innerHTML = content;
 }
 function statDisplay() {
   changeContentOfId('spin', spinText[spin]);
   changeContentOfId('lineClear', lineClearText[clearedLines]);
   changeContentOfId('backToBack', BtB ? 'Back-To-Back' : 'ㅤ');
-  changeContentOfId('combo', combo == -1 ? 'ㅤ' : combo + " COMBO");
+  changeContentOfId('combo', combo > 0 ? combo + ' COMBO' : 'ㅤ');
   changeContentOfId('lines', totalClearedLines);
 }
 
+//점수 계산 및 표시
+function scoringProcess() {
+  var plusedScore = baseScore() * level;
+  score += plusedScore;
+  scoreDisplay();
+  changeContentOfId('plus', plusedScore > 0 ? '+' + plusedScore : 'ㅤ');
+}
+function scoreDisplay() {
+  changeContentOfId('score', score);
+}
+function baseScore() {
+  var ret = pointTable[spin][clearedLines];
+  if(BtB) ret = ret + (ret / 2);
+  if(combo > 0) ret += 50 * combo;
+  return ret;
+}
 
 //블록 회전
 function roatateClockwise(cnt) {
@@ -446,6 +501,10 @@ function moveDown() {
     clearBlock();
     y--;
     displayBlock();
+    if(fallingSpeed == SDF){
+      score++;
+      scoreDisplay();
+    }
   }
   fallingThread = setTimeout(moveDown, fallingSpeed);
 }
@@ -533,7 +592,8 @@ function gameoverCheck() {
   else return true;
 }
 function gameover() {
-  alert('[Game Over]');
+  clearTimeout(timeCountingThread);
+  alert(`[Game Over]\n\nPlayTime ( ${timeText()} )\nScore ( ${score} )`);
   init();
   location.reload();
 }
