@@ -20,7 +20,6 @@ table {
   background-color: white;
   margin: 0px;
   text-align: center;
-  font-family: 'Century Gothic';
   font-weight: bold;
   font-size: 12pt;
   color: black;
@@ -29,11 +28,33 @@ table {
 .statTag {
   font-weight: bold;
   font-size: 9pt;
-  line-height: 1.2;
+  line-height: 1.8;
 }
 .coloumn {
   border: 1px solid white;
   border-top: 0px;
+}
+#spin {
+  font-size: 10pt;
+  font-weight: bold;
+  color: #AF2989 !important;
+}
+#lineClear {
+  font-size: 18pt;
+  line-height: 1.2;
+}
+#backToBack {
+  font-size: 10pt;
+}
+#combo {
+  line-height: 7.0;
+}
+#plus {
+  font-size: 8pt;
+  line-height: 1.5;
+}
+#timeDisplay, #linesDisplay {
+  margin-top: 20px;
 }
 #holdDisplay {
   float: right;
@@ -48,6 +69,7 @@ table {
 #statBoard p {
   text-align: right;
   color: white;
+  margin: 0px;
 }
 #scoreBoard {
   margin-top: 285px;
@@ -56,6 +78,7 @@ table {
 #scoreBoard p {
   text-align: left;
   color: white;
+  margin: 0px;
 }
 #gameTable {
   margin: 0px;
