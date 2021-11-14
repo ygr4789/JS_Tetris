@@ -2,8 +2,11 @@ body {
   margin: 20px;
   background-color: #1B1D1F;
 }
-body>div {
+body > div {
   float: left;
+}
+body > div:first-child {
+  width: 200px;
 }
 td {
   width: 14px;
@@ -13,7 +16,7 @@ td {
 table {
   margin: 10px;
 }
-p {
+.boxTag {
   background-color: white;
   margin: 0px;
   text-align: center;
@@ -23,10 +26,37 @@ p {
   color: black;
   line-height: 1.5;
 }
-#gameTable {
-  margin: 0px;
+.statTag {
+  font-weight: bold;
+  font-size: 9pt;
+  line-height: 1.2;
 }
 .coloumn {
   border: 1px solid white;
   border-top: 0px;
+}
+#holdDisplay {
+  float: right;
+}
+#nextDisplay {
+  float: left;
+}
+#statBoard {
+  margin-top: 100px;
+  margin-right: 15px;
+}
+#statBoard p {
+  text-align: right;
+  color: white;
+}
+#scoreBoard {
+  margin-top: 285px;
+  margin-left: 15px;
+}
+#scoreBoard p {
+  text-align: left;
+  color: white;
+}
+#gameTable {
+  margin: 0px;
 }

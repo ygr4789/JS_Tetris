@@ -3,12 +3,34 @@ var currBlock;
 var currShape;
 var currDir;
 
+var T_spinRule1; // last maneuval is rotation
+var T_spinRule2; // last rotation kicked last offset
+
+var score;
+var spin;
+var combo;
+var totalClearedLines, clearedLines;
+var BtB, readyForBtB;
+
+var spinText = [
+  'ㅤ',
+  'mini  T - SPIN',
+  'T - SPIN'
+  ];
+var lineClearText = [
+  'ㅤ',
+  'S I N G L E',
+  'D O U B L E',
+  'T R I P L E',
+  'T E T R I S'
+  ];
+
 var GRV = 300, // gravity
   SDF = 30; // softdrop speed
 var DAS = 133; // delayed auto shift
 ARR = 10; //auto repeat rate
 
-var MY = 50,
+var MY = 40,
   MX = 10; // field size
 var VY = 22,
   VX = 10; // displayed size
@@ -40,6 +62,9 @@ var offset = [[
     [[-1, 0],[-1, 0],[-1, 0],[-1, 0],[-1, 0],],
     ],
   ]; //wall kick 구현 ... 편의상 x, y 로 작성됨
+var corners = [
+    [1, -1],[1, 1],[-1, -1],[-1, 1]
+  ]; //T-spin 구현을 위한 T미노 모서리 좌표
 var blockColor = [
   '#0F9BD7', // 'cyan'
   '#2141C6', // 'blue'
@@ -162,6 +187,11 @@ function lockDelayCount() {
 
 //초기화
 function init() {
+  score = 0;
+  combo = -1;
+  totalClearedLines = 0;
+  BtB = false;
+  readyForBtB = false;
   initField();
   drawField();
   drawHoldBox();
@@ -234,19 +264,22 @@ function isFull(i) {
   return true;
 }
 function singleLineClear(fullIdx) {
-  for (var i = fullIdx; i < MY - 1; i++) gameField[i] = gameField[i + 1];
+  for (var i = fullIdx; i < MY - 1; i++) gameField[i] = gameField[i + 1].slice();
 }
 function lineClear() {
+  var ret = 0;
   var fullLineExist = false;
   for (var i = y - 2; i <= y + 2; i++) {
     if (isInBound(i, 0)) {
       while (isFull(i)) {
+        ret++;
         singleLineClear(i);
         fullLineExist = true;
       }
     }
   }
   if (fullLineExist) updateField();
+  return ret;
 }
 function updateField() {
   for (var i = 0; i < VY; i++)
@@ -273,6 +306,7 @@ function holdBlock() {
 function hardDrop() {
   var dy = 0;
   while (canMove(currShape, dy - 1, 0)) dy--;
+  if(dy != 0) T_spinRule1 = false;
   clearBlock();
   y += dy;
   displayBlock();
@@ -295,9 +329,61 @@ function stackBlock() {
     gameField[by][bx] = currBlock;
   }
   holdUsed = false;
-  lineClear();
+  spin = checkTspin();
+  clearedLines = lineClear();
+  statCalculate();
+  statDisplay();
   setBlock();
 }
+
+//티스핀 판별 (none:0, mini:1, proper:2)
+function detect(delta) {
+  var cy = y + delta[0];
+  var cx = x + delta[1];
+  return !isInBound(cy, cx) || gameField[cy][cx] != -1;
+}
+function checkTspin() {
+  if(currBlock != 5 || !T_spinRule1) return 0;
+  var frontCorners = [corners[currDir], corners[(currDir + 1) % 4]];
+  var cnt1 = 0// 전 방향 모서리 세기
+  var cnt2 = 0// 앞쪽 모서리만 세기
+  for(var i=0; i<4; i++)
+    if(detect(corners[i])) cnt1++;
+  for(var i=0; i<2; i++)
+    if(detect(frontCorners[i])) cnt2++;
+  if(cnt1 < 3) return 0;
+  else if(cnt2 ==2 || T_spinRule2) return 2;
+  else return 1;
+}
+
+//점수 및 상태 처리, 표시
+function statCalculate() {
+  if(clearedLines == 0){
+    combo = -1;
+  }
+  else{
+    combo++;
+  }
+  var tmp = spin != 0 || clearedLines == 4
+  BtB = readyForBtB && tmp;
+  readyForBtB = tmp;
+  totalClearedLines += clearedLines;
+  T_spinRule1 = T_spinRule2 = false;
+}
+function plusCalculate() {
+  
+}
+function changeContentOfId(id, content) {
+  document.getElementById(id).innerHTML = content;
+}
+function statDisplay() {
+  changeContentOfId('spin', spinText[spin]);
+  changeContentOfId('lineClear', lineClearText[clearedLines]);
+  changeContentOfId('backToBack', BtB ? 'Back-To-Back' : 'ㅤ');
+  changeContentOfId('combo', combo == -1 ? 'ㅤ' : combo + " COMBO");
+  changeContentOfId('lines', totalClearedLines);
+}
+
 
 //블록 회전
 function roatateClockwise(cnt) {
@@ -308,6 +394,8 @@ function roatateClockwise(cnt) {
     var dy = offset[index][currDir][i][1] - offset[index][nextDir][i][1];
     var dx = offset[index][currDir][i][0] - offset[index][nextDir][i][0];
     if (canMove(nextShape, dy, dx)) {
+      T_spinRule1 = true;
+      T_spinRule2 = i == 4;
       clearBlock();
       y += dy;
       x += dx;
@@ -354,6 +442,7 @@ function setBlock() {
 //블록 낙하
 function moveDown() {
   if (canMove(currShape, -1, 0)) {
+    T_spinRule1 = false;
     clearBlock();
     y--;
     displayBlock();
@@ -364,6 +453,7 @@ function moveDown() {
 //블록 좌우이동
 function moveLR(dir) {
   if (canMove(currShape, 0, dir)) {
+    T_spinRule1 = false;
     lockDelayRecount();
     clearBlock();
     x += dir;
