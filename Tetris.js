@@ -7,17 +7,20 @@ var T_spinRule1; // last maneuval is rotation
 var T_spinRule2; // last rotation kicked last offset
 
 var level = 1;
-var score;
+var score, plusedScore;
 var spin;
 var combo;
 var totalClearedLines, clearedLines;
 var BtB, readyForBtB;
+var perfectClear;
+var displayingThread;
 
 var pointTable = [
   [0, 100, 300, 500, 800],
   [100, 200, 400],
   [400, 800, 1200, 1600]
   ];
+var pointTable_PC = [0, 800, 1200, 1800, 2000, 3200];
 var spinText = [
   'ㅤ',
   'mini  T - SPIN',
@@ -196,7 +199,7 @@ function lockDelayRecount() {
   countThread = setTimeout(lockDelayCount, 10);
 }
 function lockDelayCount() {
-  if (lockDelay > 100) stackBlock();
+  if (lockDelay > 50) stackBlock();
   else {
     if (!canMove(currShape, -1, 0)) lockDelay++;
     countThread = setTimeout(lockDelayCount, 10);
@@ -234,7 +237,7 @@ function drawField() {
   for (var i = VY - 1; i >= 0; i--) {
     fieldTag += '<tr>';
     for (var j = 0; j < VX; j++)
-      fieldTag += '<td id="' + 'gameTable' + String(i) + String(j) + '"></td>';
+      fieldTag += '<td id="gameTable' + String(i) + String(j) + '"></td>';
     fieldTag += '</tr>';
   }
   fieldTag += '</table>';
@@ -372,11 +375,14 @@ function stackBlock() {
     gameField[by][bx] = currBlock;
   }
   holdUsed = false;
-  spin = checkTspin();
-  clearedLines = lineClear();
   statCalculate();
-  statDisplay();
-  scoringProcess();
+  scoreCalculate();
+  if(plusedScore > 0) {
+    clearTimeout(displayingThread);
+    statDisplay();
+    scoreDisplay();
+    displayingThread = setTimeout(stablizeDisplay, 2500);
+  }
   setBlock();
 }
 
@@ -400,8 +406,19 @@ function checkTspin() {
   else return 1;
 }
 
+//퍼펙트 클리어
+function checkPercectClear() {
+  for(var i=0; i<MY; i++)
+    for(var j=0; j<MX; j++)
+      if(gameField[i][j] != -1) return false;
+  return true;
+}
+
 //상태 계산 및 표시
 function statCalculate() {
+  spin = checkTspin();
+  clearedLines = lineClear();
+  perfectClear = checkPercectClear();
   var difficult = spin != 0 || clearedLines == 4
   if(clearedLines == 0){
     combo = -1;
@@ -419,25 +436,41 @@ function statDisplay() {
   changeContentOfId('spin', spinText[spin]);
   changeContentOfId('lineClear', lineClearText[clearedLines]);
   changeContentOfId('backToBack', BtB ? 'Back-To-Back' : 'ㅤ');
-  changeContentOfId('combo', combo > 0 ? combo + ' COMBO' : 'ㅤ');
+  changeContentOfId('comboValue', combo > 0 ? combo : 'ㅤ');
+  changeContentOfId('comboText', combo > 0 ? 'COMBO' : 'ㅤ')
   changeContentOfId('lines', totalClearedLines);
+  changeContentOfId('fieldText', perfectClear ? 'PERFECT<br>C L E A R' : 'ㅤ');
 }
 
 //점수 계산 및 표시
-function scoringProcess() {
-  var plusedScore = baseScore() * level;
+function scoreCalculate() {
+  plusedScore = baseScore() * level;
   score += plusedScore;
-  scoreDisplay();
-  changeContentOfId('plus', plusedScore > 0 ? '+' + plusedScore : 'ㅤ');
 }
 function scoreDisplay() {
   changeContentOfId('score', score);
+  changeContentOfId('plus', plusedScore > 0 ? '+' + plusedScore : 'ㅤ');
 }
 function baseScore() {
+  if(perfectClear) {
+    if(clearedLines == 4 && BtB) return pointTable_PC[5];
+    else return pointTable_PC[clearedLines];
+  }
   var ret = pointTable[spin][clearedLines];
   if(BtB) ret = ret + (ret / 2);
   if(combo > 0) ret += 50 * combo;
   return ret;
+}
+
+//표시창 초기화 
+function stablizeDisplay() {
+  changeContentOfId('spin', 'ㅤ');
+  changeContentOfId('lineClear', 'ㅤ');
+  changeContentOfId('backToBack', 'ㅤ');
+  changeContentOfId('comboValue', 'ㅤ');
+  changeContentOfId('comboText', 'ㅤ');
+  changeContentOfId('plus', 'ㅤ');
+  changeContentOfId('fieldText', 'ㅤ');
 }
 
 //블록 회전
@@ -593,7 +626,7 @@ function gameoverCheck() {
 }
 function gameover() {
   clearTimeout(timeCountingThread);
-  alert(`[Game Over]\n\nPlayTime ( ${timeText()} )\nScore ( ${score} )`);
+  alert(`[Game Over]\n\nPlayTime < ${timeText()} >\nScore < ${score} >`);
   init();
   location.reload();
 }
