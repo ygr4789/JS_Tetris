@@ -6,7 +6,7 @@ var currDir;
 var T_spinRule1; // last maneuval is rotation
 var T_spinRule2; // last rotation kicked last offset
 
-var level = 1;
+var level;
 var score, plusedScore;
 var spin;
 var combo;
@@ -37,10 +37,14 @@ var lineClearText = [
 var time;
 var timeCountingThread;
 
-var GRV = 300, // gravity
-  SDF = GRV/10; // softdrop speed
+var GRV, // gravity
+  SDF; // softdrop speed
 var DAS = 133; // delayed auto shift
 ARR = 10; //auto repeat rate
+var delayPerLine = [
+  800, 717, 633, 550, 467, 833, 300, 217, 133, 100,
+  83, 83, 83, 67, 67, 67, 50, 50, 50, 33,
+  33, 33, 17, 17, 17, 0, 0, 0, 0, 0 ];
 
 var MY = 40,
   MX = 10; // field size
@@ -88,8 +92,11 @@ var blockColor = [
   ];// I, J, L, O, S, T, Z 색상
 var tileColor = '#1B1D1F';
 
-var fallingThread, fallingSpeed;
-var countThread, lockDelay;
+var fallingThread, softDropIsOn;
+var delayCountingThread, waitedDelay, delayResetCount;
+var lockDelay = 500;
+var delayResetLimit = 15;
+
 var gameField;
 
 var movingThread;
@@ -126,7 +133,7 @@ function keyDownEventHandler(e) {
         break;
       case 40: // down
         clearTimeout(fallingThread);
-        softDrop(true);
+        softDropIsOn = true;
         fallingThread = setTimeout(moveDown(), 0);
         break;
       case 88: // z
@@ -163,7 +170,7 @@ function keyUpEventHandler(e) {
       if(leftDASCharged) movingThread = setTimeout(autoMoveLR, DAS, -1);
       break;
     case 40: // down
-      softDrop(false);
+      softDropIsOn = false;
       break;
     case 88: // z
       break;
@@ -194,15 +201,16 @@ function changeContentOfId(id, content) {
 
 //Lock Delay
 function lockDelayRecount() {
-  clearTimeout(countThread);
-  lockDelay = 0;
-  countThread = setTimeout(lockDelayCount, 10);
+  clearTimeout(delayCountingThread);
+  if(waitedDelay > 0) delayResetCount++;
+  waitedDelay = 0;
+  delayCountingThread = setTimeout(lockDelayCount, 10);
 }
 function lockDelayCount() {
-  if (lockDelay > 50) stackBlock();
+  if (waitedDelay > lockDelay || delayResetCount > delayResetLimit) stackBlock();
   else {
-    if (!canMove(currShape, -1, 0)) lockDelay++;
-    countThread = setTimeout(lockDelayCount, 10);
+    if (!canMove(currShape, -1, 0)) waitedDelay+=10;
+    delayCountingThread = setTimeout(lockDelayCount, 10);
   }
 }
 
@@ -213,17 +221,17 @@ function init() {
   totalClearedLines = 0;
   BtB = false;
   readyForBtB = false;
+  softDropIsOn = false;
+  holdedBlock = -1;
+  holdUsed = false;
   time = [0, 0, 0];
+  timeCountingThread = setInterval(timeCount, 10);
   initField();
   drawField();
   drawHoldBox();
   drawNextTable();
   setNextBag();
   setBlock();
-  timeCountingThread = setInterval(timeCount, 10);
-  holdedBlock = -1;
-  holdUsed = false;
-  fallingSpeed = GRV;
 }
 function initField() {
   gameField = new Array(MY);
@@ -337,7 +345,7 @@ function updateField() {
 //홀드
 function holdBlock() {
   clearTimeout(fallingThread);
-  clearTimeout(countThread);
+  clearTimeout(delayCountingThread);
   clearBlock();
   if (holdedBlock != -1) nextBlockQueue.unshift(holdedBlock);
   holdedBlock = currBlock;
@@ -360,15 +368,14 @@ function hardDrop() {
 }
 
 //소프트드롭
-function softDrop(isOn) {
-  if (isOn) fallingSpeed = SDF;
-  else fallingSpeed = GRV;
+function fallingSpeed() {
+  return softDropIsOn ? SDF : GRV;
 }
 
 //블록 스택
 function stackBlock() {
   clearTimeout(fallingThread);
-  clearTimeout(countThread);
+  clearTimeout(delayCountingThread);
   for (var i = 0; i < 4; i++) {
     var by = y + currShape[i][0];
     var bx = x + currShape[i][1];
@@ -462,6 +469,14 @@ function baseScore() {
   return ret;
 }
 
+//레벨 갱신
+function levelUpdate() {
+  var level = Math.min(30, 1 + parseInt(totalClearedLines / 10));
+  GRV = delayPerLine[level-1]
+  SDF = GRV/10;
+  changeContentOfId('level', level);
+}
+
 //표시창 초기화 
 function stablizeDisplay() {
   changeContentOfId('spin', 'ㅤ');
@@ -512,6 +527,7 @@ function rotateShape(shape) {
 
 //다음 블록 출현
 function setBlock() {
+  levelUpdate();
   y = SY;
   x = SX;
   currDir = 0;
@@ -522,9 +538,10 @@ function setBlock() {
   nextBlockQueue.shift();
   displayNextTable();
   if (nextBlockQueue.length < 7) setNextBag();
-  fallingThread = setTimeout(moveDown, fallingSpeed);
-  lockDelay = 0;
-  countThread = setTimeout(lockDelayCount, 10);
+  fallingThread = setTimeout(moveDown, fallingSpeed());
+  waitedDelay = 0;
+  delayResetCount = 0;
+  delayCountingThread = setTimeout(lockDelayCount, 10);
 }
 
 //블록 낙하
@@ -534,12 +551,12 @@ function moveDown() {
     clearBlock();
     y--;
     displayBlock();
-    if(fallingSpeed == SDF){
+    if(softDropIsOn){
       score++;
       scoreDisplay();
     }
   }
-  fallingThread = setTimeout(moveDown, fallingSpeed);
+  fallingThread = setTimeout(moveDown, fallingSpeed());
 }
 
 //블록 좌우이동
