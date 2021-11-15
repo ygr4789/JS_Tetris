@@ -471,7 +471,7 @@ function baseScore() {
 
 //레벨 갱신
 function levelUpdate() {
-  var level = Math.min(30, 1 + parseInt(totalClearedLines / 10));
+  level = Math.min(30, 1 + parseInt(totalClearedLines / 10));
   GRV = delayPerLine[level-1]
   SDF = GRV/10;
   changeContentOfId('level', level);
