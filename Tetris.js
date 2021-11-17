@@ -15,18 +15,18 @@ var BtB, readyForBtB;
 var perfectClear;
 var displayingThread;
 
-var pointTable = [
+const pointTable = [
   [0, 100, 300, 500, 800],
   [100, 200, 400],
   [400, 800, 1200, 1600]
   ];
-var pointTable_PC = [0, 800, 1200, 1800, 2000, 3200];
-var spinText = [
+const pointTable_PC = [0, 800, 1200, 1800, 2000, 3200];
+const spinText = [
   'ㅤ',
   'mini  T - SPIN',
   'T - SPIN'
   ];
-var lineClearText = [
+const lineClearText = [
   'ㅤ',
   'S I N G L E',
   'D O U B L E',
@@ -41,18 +41,16 @@ var GRV, // gravity
   SDF; // softdrop speed
 var DAS = 133; // delayed auto shift
 ARR = 10; //auto repeat rate
-var delayPerLine = [
+const delayPerLine = [
   800, 717, 633, 550, 467, 833, 300, 217, 133, 100,
   83, 83, 83, 67, 67, 67, 50, 50, 50, 33,
   33, 33, 17, 17, 17, 0, 0, 0, 0, 0 ];
 
-var MY = 40,
-  MX = 10; // field size
-var VY = 22,
-  VX = 10; // displayed size
-var SY = 20,
-  SX = 4; // starting point
-var blockShape = [ 
+const MY = 40, MX = 10; // field size
+const VY = 22, VX = 10; // displayed size
+const SY = 20, SX = 4; // starting point
+const tmpShape = [[0,0],[0,0],[0,0],[0,0]];
+const blockShape = [ 
   [[0, 0],[0, -1],[0, 1],[0, 2],],
   [[0, 0],[1, -1],[0, -1],[0, 1],],
   [[0, 0],[0, -1],[0, 1],[1, 1],],
@@ -61,7 +59,7 @@ var blockShape = [
   [[0, 0],[0, -1],[1, 0],[0, 1],],
   [[0, 0],[1, -1],[1, 0],[0, 1],],
   ]; //현재위치에 대한 상대적 좌표 ...  y, x
-var offset = [[
+const offset = [[
     [[0, 0],[0, 0],[0, 0],[0, 0],[0, 0],],
     [[0, 0],[1, 0],[1, -1],[0, 2],[1, 2],],
     [[0, 0],[0, 0],[0, 0],[0, 0],[0, 0],],
@@ -78,10 +76,10 @@ var offset = [[
     [[-1, 0],[-1, 0],[-1, 0],[-1, 0],[-1, 0],],
     ],
   ]; //wall kick 구현 ... 편의상 x, y 로 작성됨
-var corners = [
+const corners = [
     [1, -1],[1, 1],[-1, -1],[-1, 1]
   ]; //T-spin 구현을 위한 T미노 모서리 좌표
-var blockColor = [
+const blockColor = [
   '#0F9BD7', // 'cyan'
   '#2141C6', // 'blue'
   '#E35C02', // 'orange'
@@ -90,14 +88,12 @@ var blockColor = [
   '#AF2989', // 'purple' 
   '#D70F37'// 'red'
   ];// I, J, L, O, S, T, Z 색상
-var tileColor = '#1B1D1F';
+const tileColor = '#1B1D1F';
 
 var fallingThread, softDropIsOn;
 var delayCountingThread, waitedDelay, delayResetCount;
 var lockDelay = 500;
 var delayResetLimit = 15;
-
-var gameField;
 
 var movingThread;
 var leftDASCharged, leftDASChargingThread;
@@ -107,14 +103,22 @@ var nextBlockQueue = new Array();
 var holdedBlock;
 var holdUsed;
 
+var gameField;
+var inProcess; // 게임 진행 중 여부
+var gameStarted; // 게임 시작 여부
+
 var keyPressed = new Array(256).fill(false);
 
 //키 입력 처리
 document.onkeydown = keyDownEventHandler;
 function keyDownEventHandler(e) {
+  if(e.keyCode == 115 && !gameStarted) {
+    gameStarted = true;
+    startGame();
+  }
   if(!keyPressed[e.keyCode]){
     keyPressed[e.keyCode] = true;
-    switch (e.keyCode) {
+    switch (e.keyCode) { 
       case 37: // left
         clearTimeout(movingThread);
         setTimeout(moveLR, 0, -1);
@@ -131,6 +135,8 @@ function keyDownEventHandler(e) {
           movingThread = setTimeout(autoMoveLR, 0, 1);
         }, DAS);
         break;
+    }
+    if(inProcess) switch(e.keyCode) {
       case 40: // down
         clearTimeout(fallingThread);
         softDropIsOn = true;
@@ -185,54 +191,43 @@ function keyUpEventHandler(e) {
 
 init();
 
-//숫자 출력
-function fillLeadingZeros(num, width) {
-  var ret = String(num);
-  return ret.length >= width ? ret : new Array(width - ret.length + 1).join('0') + ret;
-}
-
-//HTML 호출
-function cell(name, y, x) {
-  return document.getElementById(name + String(y) + String(x));
-}
-function changeContentOfId(id, content) {
-  document.getElementById(id).innerHTML = content;
-}
-
-//Lock Delay
-function lockDelayRecount() {
-  clearTimeout(delayCountingThread);
-  if(waitedDelay > 0) delayResetCount++;
-  waitedDelay = 0;
-  delayCountingThread = setTimeout(lockDelayCount, 10);
-}
-function lockDelayCount() {
-  if (waitedDelay > lockDelay || delayResetCount > delayResetLimit) stackBlock();
-  else {
-    if (!canMove(currShape, -1, 0)) waitedDelay+=10;
-    delayCountingThread = setTimeout(lockDelayCount, 10);
-  }
-}
-
 //초기화
 function init() {
+  y = SY;
+  x = SX;
+  currShape = tmpShape;
   score = 0;
   combo = -1;
   totalClearedLines = 0;
   BtB = false;
+  inProcess = false;
+  gameStarted = false;
   readyForBtB = false;
   softDropIsOn = false;
   holdedBlock = -1;
   holdUsed = false;
   time = [0, 0, 0];
-  timeCountingThread = setInterval(timeCount, 10);
+  changeContentOfId('fieldText', 'Press F4<br>to Start');
   initField();
   drawField();
   drawHoldBox();
   drawNextTable();
-  setNextBag();
-  setBlock();
 }
+
+// 게임 시작
+function startGame() {
+  setNextBag();
+  displayNextTable();
+  for(var i=0; i<3; i++)
+    setTimeout(changeContentOfId, 1000 * i, 'fieldText', 3 - i);
+  setTimeout(() => {
+    inProcess = true;
+    changeContentOfId('fieldText', 'ㅤ');
+    timeCountingThread = setInterval(timeCount, 10);
+    setBlock();
+  }, 3000);
+}
+
 function initField() {
   gameField = new Array(MY);
   for (var i = 0; i < MY; i++) {
@@ -269,6 +264,35 @@ function drawNextTable() {
   var tableTag = '';
   for (var i = 0; i < 5; i++) tableTag += blockTag('nextTable' + String(i));
   document.getElementById('nextTable').innerHTML = tableTag;
+}
+
+//숫자 출력
+function fillLeadingZeros(num, width) {
+  var ret = String(num);
+  return ret.length >= width ? ret : new Array(width - ret.length + 1).join('0') + ret;
+}
+
+//HTML 호출
+function cell(name, y, x) {
+  return document.getElementById(name + String(y) + String(x));
+}
+function changeContentOfId(id, content) {
+  document.getElementById(id).innerHTML = content;
+}
+
+//Lock Delay
+function lockDelayRecount() {
+  clearTimeout(delayCountingThread);
+  if(waitedDelay > 0) delayResetCount++;
+  waitedDelay = 0;
+  delayCountingThread = setTimeout(lockDelayCount, 10);
+}
+function lockDelayCount() {
+  if (waitedDelay > lockDelay) stackBlock();
+  else {
+    if (!canMove(currShape, -1, 0)) waitedDelay+=10;
+    delayCountingThread = setTimeout(lockDelayCount, 10);
+  }
 }
 
 //시간 측정
@@ -504,7 +528,7 @@ function roatateClockwise(cnt) {
       x += dx;
       currShape = nextShape;
       currDir = nextDir;
-      lockDelayRecount();
+      if (delayResetCount < delayResetLimit) lockDelayRecount();
       displayBlock();
       break;
     }
@@ -563,7 +587,7 @@ function moveDown() {
 function moveLR(dir) {
   if (canMove(currShape, 0, dir)) {
     T_spinRule1 = false;
-    lockDelayRecount();
+    if(delayResetCount > delayResetLimit) lockDelayRecount();
     clearBlock();
     x += dir;
     displayBlock();

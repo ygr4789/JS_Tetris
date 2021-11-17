@@ -8,7 +8,7 @@ body > div {
   position: relative;
 }
 body > div:first-child {
-  width: 200px;
+  width: 150px;
 }
 td {
   width: 14px;
