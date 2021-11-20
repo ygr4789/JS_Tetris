@@ -47,7 +47,7 @@ const delayPerLine = [
   33, 33, 17, 17, 17, 0, 0, 0, 0, 0 ];
 
 const MY = 40, MX = 10; // field size
-const VY = 22, VX = 10; // displayed size
+const VY = 20, VX = 10; // displayed size
 const SY = 20, SX = 4; // starting point
 const tmpShape = [[0,0],[0,0],[0,0],[0,0]];
 const blockShape = [ 
@@ -109,9 +109,23 @@ var gameStarted; // 게임 시작 여부
 
 var keyPressed = new Array(256).fill(false);
 
+const opKeyId = [
+  'MOVE LEFT',
+  'MOVE RIGHT',
+  'SOFT DROP',
+  'HARD DROP',
+  'ROTATE CCW',
+  'ROTATE CW',
+  'HOLD'
+  ];
+const defaultKeyCode = [ 37, 39, 40, 32, 88, 90, 16 ]; 
+var customKeyCode = defaultKeyCode.slice();
+var tmpKeyCode;
+
 //키 입력 처리
-document.onkeydown = keyDownEventHandler;
+document.addEventListener('keydown', keyDownEventHandler);
 function keyDownEventHandler(e) {
+  e.preventDefault();
   if(e.keyCode == 115 && !gameStarted) {
     gameStarted = true;
     startGame();
@@ -119,7 +133,7 @@ function keyDownEventHandler(e) {
   if(!keyPressed[e.keyCode]){
     keyPressed[e.keyCode] = true;
     switch (e.keyCode) { 
-      case 37: // left
+      case customKeyCode[0]: // left
         clearTimeout(movingThread);
         setTimeout(moveLR, 0, -1);
         leftDASChargingThread = setTimeout(() => {
@@ -127,7 +141,7 @@ function keyDownEventHandler(e) {
           movingThread = setTimeout(autoMoveLR, 0, -1);
         }, DAS);
         break;
-      case 39: // right
+      case customKeyCode[1]: // right
         clearTimeout(movingThread);
         setTimeout(moveLR, 0, 1);
         rightDASChargingThread = setTimeout(() => {
@@ -137,21 +151,21 @@ function keyDownEventHandler(e) {
         break;
     }
     if(inProcess) switch(e.keyCode) {
-      case 40: // down
+      case customKeyCode[2]: // down
         clearTimeout(fallingThread);
         softDropIsOn = true;
-        fallingThread = setTimeout(moveDown(), 0);
+        fallingThread = setTimeout(moveDown, 0);
         break;
-      case 88: // z
-        setTimeout(roatateClockwise, 0, 1);
-        break;
-      case 90: // x
-        setTimeout(roatateClockwise, 0, 3);
-        break;
-      case 32: // spacebar
+      case customKeyCode[3]: // spacebar
         setTimeout(hardDrop, 0);
         break;
-      case 16: // shift
+      case customKeyCode[4]: // z
+        setTimeout(roatateClockwise, 0, 1);
+        break;
+      case customKeyCode[5]: // x
+        setTimeout(roatateClockwise, 0, 3);
+        break;
+      case customKeyCode[6]: // shift
         setTimeout(holdBlock, 0);
         break;
     }
@@ -159,32 +173,32 @@ function keyDownEventHandler(e) {
 }
 
 //키 해제 처리
-document.onkeyup = keyUpEventHandler;
+document.addEventListener('keyup', keyUpEventHandler);
 function keyUpEventHandler(e) {
   keyPressed[e.keyCode] = false;
   switch (e.keyCode) {
-    case 37: // left
+    case customKeyCode[0]: // left
       leftDASCharged = false;
       clearTimeout(leftDASChargingThread);
       clearTimeout(movingThread);
       if(rightDASCharged) movingThread = setTimeout(autoMoveLR, DAS, 1);
       break;
-    case 39: // right
+    case customKeyCode[1]: // right
       rightDASCharged = false;
       clearTimeout(rightDASChargingThread);
       clearTimeout(movingThread);
       if(leftDASCharged) movingThread = setTimeout(autoMoveLR, DAS, -1);
       break;
-    case 40: // down
+    case customKeyCode[2]: // down
       softDropIsOn = false;
       break;
-    case 88: // z
+    case customKeyCode[3]: // spacebar
       break;
-    case 90: // x
+    case customKeyCode[4]: // z
       break;
-    case 32: // spacebar
+    case customKeyCode[5]: // x
       break;
-    case 16: // shift
+    case customKeyCode[6]: // shift
       break;
   }
 }
@@ -210,24 +224,10 @@ function init() {
   changeContentOfId('fieldText', 'Press F4<br>to Start');
   initField();
   drawField();
-  drawHoldBox();
+  drawHoldTable();
   drawNextTable();
+  drawSettingTable();
 }
-
-// 게임 시작
-function startGame() {
-  setNextBag();
-  displayNextTable();
-  for(var i=0; i<3; i++)
-    setTimeout(changeContentOfId, 1000 * i, 'fieldText', 3 - i);
-  setTimeout(() => {
-    inProcess = true;
-    changeContentOfId('fieldText', 'ㅤ');
-    timeCountingThread = setInterval(timeCount, 10);
-    setBlock();
-  }, 3000);
-}
-
 function initField() {
   gameField = new Array(MY);
   for (var i = 0; i < MY; i++) {
@@ -244,10 +244,10 @@ function drawField() {
     fieldTag += '</tr>';
   }
   fieldTag += '</table>';
-  document.getElementById('gameField').innerHTML = fieldTag;
+  changeContentOfId('gameField', fieldTag);
 }
 function blockTag(name) {
-  var ret = '<table id="' + name + '" border=0>';
+  var ret = '<table id="' + name + '" class="blockBox" border=0>';
   for (var i = 1; i >= 0; i--) {
     ret += '<tr>';
     for (var j = 0; j < 4; j++)
@@ -257,13 +257,84 @@ function blockTag(name) {
   ret += '</table>';
   return ret;
 }
-function drawHoldBox() {
-  document.getElementById('holdBox').innerHTML = blockTag('holdTable');
+function drawHoldTable() {
+  changeContentOfId('holdTable', blockTag('holdBox'));
 }
 function drawNextTable() {
   var tableTag = '';
-  for (var i = 0; i < 5; i++) tableTag += blockTag('nextTable' + String(i));
-  document.getElementById('nextTable').innerHTML = tableTag;
+  for (var i = 0; i < 5; i++) tableTag += blockTag('nextBox' + String(i));
+  changeContentOfId('nextTable', tableTag);
+}
+
+// 설정 창
+function keySettingHandler(e) {
+  e.preventDefault();
+  var sel = settingWindow.querySelector('input:checked');
+  if(sel) {
+    var index = parseInt(sel.value);
+    changeContentOfId(opKeyId[index], e.keyCode);
+    tmpKeyCode[index] = e.keyCode;
+    sel.checked = false;
+  }
+}
+function initSetting() {
+  customKeyCode = defaultKeyCode.slice();
+  displaySetting();
+}
+function displaySetting() {
+  for (var i = 0; i < opKeyId.length; i++)
+    changeContentOfId(opKeyId[i], customKeyCode[i]);
+}
+function confirmSetting() {
+  customKeyCode = tmpKeyCode.slice();
+  showSettingWindow(false);
+}
+function releaseCheck() {
+  var sel = settingWindow.querySelector('input:checked');
+  if(sel) sel.checked = false;
+}
+function showSettingWindow(visible) {
+  var popup = document.getElementById('settingWindow');
+  if(visible) {
+    tmpKeyCode = customKeyCode.slice();
+    displaySetting();
+    popup.classList.remove('hidden');
+    document.addEventListener('keydown', keySettingHandler);
+  }
+  else {
+    releaseCheck();
+    popup.classList.add('hidden');
+    document.removeEventListener('keydown', keySettingHandler);
+  }
+}
+function drawSettingTable() {
+  changeContentOfId('settingTable', settingTableTag());
+}
+function settingTableTag() {
+  var ret = '';
+  for (var i = 0; i < opKeyId.length; i++) {
+    ret += '<tr><td>';
+    ret += '<span>' + opKeyId[i] + '</span>';
+    ret += '</td><td>';
+    ret += '<input id="keySettingRadio' + String(i) + '" name="keySettingRadio" type="radio" value="' + String(i) + '"/>';
+    ret += '<label id="' + opKeyId[i] + '" for="keySettingRadio' + String(i) + '">' + String(customKeyCode[i]) + '</label>';
+    ret += '</td></tr>';
+  }
+  return ret;
+}
+
+// 게임 시작
+function startGame() {
+  setNextBag();
+  displayNextTable();
+  for(var i=0; i<3; i++)
+    setTimeout(changeContentOfId, 1000 * i, 'fieldText', 3 - i);
+  setTimeout(() => {
+    inProcess = true;
+    changeContentOfId('fieldText', 'ㅤ');
+    timeCountingThread = setInterval(timeCount, 10);
+    setBlock();
+  }, 3000);
 }
 
 //숫자 출력
@@ -272,7 +343,7 @@ function fillLeadingZeros(num, width) {
   return ret.length >= width ? ret : new Array(width - ret.length + 1).join('0') + ret;
 }
 
-//HTML 호출
+// HTML 호출
 function cell(name, y, x) {
   return document.getElementById(name + String(y) + String(x));
 }
@@ -280,7 +351,7 @@ function changeContentOfId(id, content) {
   document.getElementById(id).innerHTML = content;
 }
 
-//Lock Delay
+// Lock Delay
 function lockDelayRecount() {
   clearTimeout(delayCountingThread);
   if(waitedDelay > 0) delayResetCount++;
@@ -316,7 +387,7 @@ function timeText() {
   return ret;
 }
 
-//홀드 및 넥스트 표시
+//홀드 및 넥스트 목록 표시
 function displayBlockInTable(name, blockNo) {
   for (var i = 0; i < 2; i++)
     for (var j = 0; j < 4; j++) cell(name, i, j).style.background = tileColor;
@@ -326,12 +397,12 @@ function displayBlockInTable(name, blockNo) {
     cell(name, by, bx).style.background = blockColor[blockNo];
   }
 }
-function displayHoldBox() {
-  displayBlockInTable('holdTable', holdedBlock);
+function displayHoldTable() {
+  displayBlockInTable('holdBox', holdedBlock);
 }
 function displayNextTable() {
   for (var i = 0; i < 5; i++)
-    displayBlockInTable('nextTable' + String(i), nextBlockQueue[i]);
+    displayBlockInTable('nextBox' + String(i), nextBlockQueue[i]);
 }
 
 //줄 지우기
@@ -366,16 +437,9 @@ function updateField() {
     }
 }
 
-//홀드
-function holdBlock() {
-  clearTimeout(fallingThread);
-  clearTimeout(delayCountingThread);
-  clearBlock();
-  if (holdedBlock != -1) nextBlockQueue.unshift(holdedBlock);
-  holdedBlock = currBlock;
-  holdUsed = true;
-  displayHoldBox();
-  setBlock();
+//소프트드롭
+function fallingSpeed() {
+  return softDropIsOn ? SDF : GRV;
 }
 
 //하드드롭
@@ -387,13 +451,21 @@ function hardDrop() {
   y += dy;
   displayBlock();
   score -= 2*dy;
+  plusedScore = 0;
   scoreDisplay();
   stackBlock();
 }
 
-//소프트드롭
-function fallingSpeed() {
-  return softDropIsOn ? SDF : GRV;
+//홀드
+function holdBlock() {
+  clearTimeout(fallingThread);
+  clearTimeout(delayCountingThread);
+  clearBlock();
+  if (holdedBlock != -1) nextBlockQueue.unshift(holdedBlock);
+  holdedBlock = currBlock;
+  holdUsed = true;
+  displayHoldTable();
+  setBlock();
 }
 
 //블록 스택
@@ -415,6 +487,25 @@ function stackBlock() {
     displayingThread = setTimeout(stablizeDisplay, 2500);
   }
   setBlock();
+}
+
+//다음 블록 출현
+function setBlock() {
+  levelUpdate();
+  y = SY;
+  x = SX;
+  currDir = 0;
+  currBlock = nextBlockQueue[0];
+  currShape = blockShape[currBlock];
+  displayBlock();
+  if (gameoverCheck()) gameover();
+  nextBlockQueue.shift();
+  displayNextTable();
+  if (nextBlockQueue.length < 7) setNextBag();
+  fallingThread = setTimeout(moveDown, 0);
+  waitedDelay = 0;
+  delayResetCount = 0;
+  delayCountingThread = setTimeout(lockDelayCount, 10);
 }
 
 //티스핀 판별 (none:0, mini:1, proper:2)
@@ -549,25 +640,6 @@ function rotateShape(shape) {
   return ret;
 }
 
-//다음 블록 출현
-function setBlock() {
-  levelUpdate();
-  y = SY;
-  x = SX;
-  currDir = 0;
-  currBlock = nextBlockQueue[0];
-  currShape = blockShape[currBlock];
-  displayBlock();
-  if (gameoverCheck()) gameover();
-  nextBlockQueue.shift();
-  displayNextTable();
-  if (nextBlockQueue.length < 7) setNextBag();
-  fallingThread = setTimeout(moveDown, fallingSpeed());
-  waitedDelay = 0;
-  delayResetCount = 0;
-  delayCountingThread = setTimeout(lockDelayCount, 10);
-}
-
 //블록 낙하
 function moveDown() {
   if (canMove(currShape, -1, 0)) {
@@ -577,6 +649,7 @@ function moveDown() {
     displayBlock();
     if(softDropIsOn){
       score++;
+      plusedScore = 0;
       scoreDisplay();
     }
   }
@@ -597,7 +670,6 @@ function autoMoveLR(dir) {
   moveLR(dir);
   movingThread = setTimeout(autoMoveLR, ARR, dir);
 }
-
 
 //이동 가능 여부 확인
 function isInBound(y, x) {

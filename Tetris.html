@@ -2,53 +2,80 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Tetris</title>
     <link rel="stylesheet" type="text/css" href="Tetris.css" />
   </head>
   <body>
-    <div>
-      <div id="holdDisplay" class="coloumn">
-        <p class="boxTag">HOLD</p>
-        <div id="holdBox"></div>
+    <div id="main">
+      <div>
+        <div id="holdDisplay" class="coloumn">
+          <p class="tableTag">HOLD</p>
+          <div id="holdTable"></div>
+        </div>
+        <div id="statBoard">
+          <div id="infoDisplay">
+            <p id="spin">ㅤ</p>
+            <p id="lineClear">ㅤ</p>
+            <p id="backToBack">ㅤ</p>
+            <p id="combo">
+              <span id="comboValue">ㅤ</span>
+              <span id="comboText">ㅤ</span>
+            </p>
+          </div>
+          <div id="timeDisplay">
+            <p class="statTag">TIME</p>
+            <p id="time" class="statValue">00 : 00 : 00</p>
+          </div>
+          <div id="linesDisplay">
+            <p class="statTag">LINES</p>
+            <p id="lines" class="statValue">0</p>
+          </div>
+        </div>
       </div>
-      <div id="statBoard">
-        <div id="infoDisplay">
-          <p id="spin">ㅤ</p>
-          <p id="lineClear">ㅤ</p>
-          <p id="backToBack">ㅤ</p>
-          <p id="combo">
-            <span id="comboValue">ㅤ</span>
-            <span id="comboText">ㅤ</span>
-          </p>
+      <div>
+        <div id="fieldDisplay" class="coloumn">
+          <p id="fieldText"></p>
+          <div id="gameField"></div>
         </div>
-        <div id="timeDisplay">
-          <p class="statTag">TIME</p>
-          <p id="time">00 : 00 : 00</p>
+        <p id="levelDisplay">
+          <span id="levelTag">L E V E L</span>
+          <span id="level">1</span>
+        </p>
+      </div>
+      <div>
+        <div id="nextDisplay" class="coloumn">
+          <p class="tableTag">NEXT</p>
+          <div id="nextTable"></div>
         </div>
-        <div id="linesDisplay">
-          <p class="statTag">LINES</p>
-          <p id="lines">0</p>
+        <div id="scoreBoard">
+          <div id="scoreDisplay">
+            <p class="statTag">SCORE</p>
+            <p id="score" class="statValue">0</p>
+            <p id="plus">ㅤ</p>
+          </div>
         </div>
       </div>
     </div>
-    <div class="coloumn">
-      <p id="fieldText"></p>
-      <div id="gameField"></div>
-    </div>
-    <div>
-      <div id="nextDisplay" class="coloumn">
-        <p class="boxTag">NEXT</p>
-        <div id="nextTable"></div>
+    <div id="buttonTable">
+      <div class="buttonContainer">
+        <button>모드</button>
       </div>
-      <div id="scoreBoard">
-        <div id="scoreDisplay">
-          <p class="statTag">SCORE</p>
-          <p id="score">0</p>
-          <p id="plus">ㅤ</p>
-        </div>
-        <div id="levelDisplay">
-          <p class="statTag">LEVEL</p>
-          <p id="level">1</p>
+      <div class="buttonContainer">
+        <button onclick="showSettingWindow(true)">설정</button>
+      </div>
+      <div class="buttonContainer">
+        <button>도움말</button>
+      </div>
+    </div>
+    <div id="settingWindow" class="popup hidden">
+      <div class="content">
+        <p>설정</p>
+        <table id="settingTable"></table>
+        <div>
+          <button onclick="initSetting()">초기화</button>
+          <button onclick="confirmSetting()">확인</button>
+          <button onclick="showSettingWindow(false)">닫기</button>
         </div>
       </div>
     </div>
