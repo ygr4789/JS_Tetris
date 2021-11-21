@@ -42,7 +42,7 @@ var GRV, // gravity
 var DAS = 133; // delayed auto shift
 ARR = 10; //auto repeat rate
 const delayPerLine = [
-  800, 717, 633, 550, 467, 833, 300, 217, 133, 100,
+  800, 717, 633, 550, 467, 383, 300, 217, 133, 100,
   83, 83, 83, 67, 67, 67, 50, 50, 50, 33,
   33, 33, 17, 17, 17, 0, 0, 0, 0, 0 ];
 
@@ -89,6 +89,7 @@ const blockColor = [
   '#D70F37'// 'red'
   ];// I, J, L, O, S, T, Z 색상
 const tileColor = '#1B1D1F';
+const finishColor = '#787276';
 
 var fallingThread, softDropIsOn;
 var delayCountingThread, waitedDelay, delayResetCount;
@@ -106,9 +107,11 @@ var holdUsed;
 var gameField;
 var inProcess; // 게임 진행 중 여부
 var gameStarted; // 게임 시작 여부
+var gameFinished; // 게임 종료 여부
 
 var keyPressed = new Array(256).fill(false);
 
+const settingWindow = document.getElementById('settingWindow');
 const opKeyId = [
   'MOVE LEFT',
   'MOVE RIGHT',
@@ -122,52 +125,60 @@ const defaultKeyCode = [ 37, 39, 40, 32, 88, 90, 16 ];
 var customKeyCode = defaultKeyCode.slice();
 var tmpKeyCode;
 
+const MARATHON = 0;
+const ULTRA = 1;
+const SPRINT = 2;
+const gameModeText = ['마라톤', '울트라', '스프린트'];
+var gameMode = -1;
+
 //키 입력 처리
 document.addEventListener('keydown', keyDownEventHandler);
 function keyDownEventHandler(e) {
   e.preventDefault();
-  if(e.keyCode == 115 && !gameStarted) {
+  if(e.keyCode == 115 && !gameStarted && gameMode != -1) {
     gameStarted = true;
     startGame();
   }
   if(!keyPressed[e.keyCode]){
     keyPressed[e.keyCode] = true;
-    switch (e.keyCode) { 
-      case customKeyCode[0]: // left
-        clearTimeout(movingThread);
-        setTimeout(moveLR, 0, -1);
-        leftDASChargingThread = setTimeout(() => {
-          leftDASCharged = true;
-          movingThread = setTimeout(autoMoveLR, 0, -1);
-        }, DAS);
-        break;
-      case customKeyCode[1]: // right
-        clearTimeout(movingThread);
-        setTimeout(moveLR, 0, 1);
-        rightDASChargingThread = setTimeout(() => {
-          rightDASCharged = true;
-          movingThread = setTimeout(autoMoveLR, 0, 1);
-        }, DAS);
-        break;
-    }
-    if(inProcess) switch(e.keyCode) {
-      case customKeyCode[2]: // down
-        clearTimeout(fallingThread);
-        softDropIsOn = true;
-        fallingThread = setTimeout(moveDown, 0);
-        break;
-      case customKeyCode[3]: // spacebar
-        setTimeout(hardDrop, 0);
-        break;
-      case customKeyCode[4]: // z
-        setTimeout(roatateClockwise, 0, 1);
-        break;
-      case customKeyCode[5]: // x
-        setTimeout(roatateClockwise, 0, 3);
-        break;
-      case customKeyCode[6]: // shift
-        setTimeout(holdBlock, 0);
-        break;
+    if(!gameFinished){
+      switch (e.keyCode) { 
+        case customKeyCode[0]: // left
+          clearTimeout(movingThread);
+          setTimeout(moveLR, 0, -1);
+          leftDASChargingThread = setTimeout(() => {
+            leftDASCharged = true;
+            movingThread = setTimeout(autoMoveLR, 0, -1);
+          }, DAS);
+          break;
+        case customKeyCode[1]: // right
+          clearTimeout(movingThread);
+          setTimeout(moveLR, 0, 1);
+          rightDASChargingThread = setTimeout(() => {
+            rightDASCharged = true;
+            movingThread = setTimeout(autoMoveLR, 0, 1);
+          }, DAS);
+          break;
+      }
+      if(inProcess) switch(e.keyCode) {
+        case customKeyCode[2]: // down
+          clearTimeout(fallingThread);
+          softDropIsOn = true;
+          fallingThread = setTimeout(moveDown, 0);
+          break;
+        case customKeyCode[3]: // spacebar
+          setTimeout(hardDrop, 0);
+          break;
+        case customKeyCode[4]: // z
+          setTimeout(roatateClockwise, 0, 1);
+          break;
+        case customKeyCode[5]: // x
+          setTimeout(roatateClockwise, 0, 3);
+          break;
+        case customKeyCode[6]: // shift
+          setTimeout(holdBlock, 0);
+          break;
+      }
     }
   }
 }
@@ -176,36 +187,37 @@ function keyDownEventHandler(e) {
 document.addEventListener('keyup', keyUpEventHandler);
 function keyUpEventHandler(e) {
   keyPressed[e.keyCode] = false;
-  switch (e.keyCode) {
-    case customKeyCode[0]: // left
-      leftDASCharged = false;
-      clearTimeout(leftDASChargingThread);
-      clearTimeout(movingThread);
-      if(rightDASCharged) movingThread = setTimeout(autoMoveLR, DAS, 1);
-      break;
-    case customKeyCode[1]: // right
-      rightDASCharged = false;
-      clearTimeout(rightDASChargingThread);
-      clearTimeout(movingThread);
-      if(leftDASCharged) movingThread = setTimeout(autoMoveLR, DAS, -1);
-      break;
-    case customKeyCode[2]: // down
-      softDropIsOn = false;
-      break;
-    case customKeyCode[3]: // spacebar
-      break;
-    case customKeyCode[4]: // z
-      break;
-    case customKeyCode[5]: // x
-      break;
-    case customKeyCode[6]: // shift
-      break;
+  if(!gameFinished) {
+    switch (e.keyCode) {
+      case customKeyCode[0]: // left
+        leftDASCharged = false;
+        clearTimeout(leftDASChargingThread);
+        clearTimeout(movingThread);
+        if(rightDASCharged) movingThread = setTimeout(autoMoveLR, DAS, 1);
+        break;
+      case customKeyCode[1]: // right
+        rightDASCharged = false;
+        clearTimeout(rightDASChargingThread);
+        clearTimeout(movingThread);
+        if(leftDASCharged) movingThread = setTimeout(autoMoveLR, DAS, -1);
+        break;
+      case customKeyCode[2]: // down
+        softDropIsOn = false;
+        break;
+      case customKeyCode[3]: // spacebar
+        break;
+      case customKeyCode[4]: // z
+        break;
+      case customKeyCode[5]: // x
+        break;
+      case customKeyCode[6]: // shift
+        break;
+    }
   }
 }
 
-init();
-
 //초기화
+init();
 function init() {
   y = SY;
   x = SX;
@@ -216,6 +228,7 @@ function init() {
   BtB = false;
   inProcess = false;
   gameStarted = false;
+  gameFinished = false;
   readyForBtB = false;
   softDropIsOn = false;
   holdedBlock = -1;
@@ -294,16 +307,15 @@ function releaseCheck() {
   if(sel) sel.checked = false;
 }
 function showSettingWindow(visible) {
-  var popup = document.getElementById('settingWindow');
   if(visible) {
     tmpKeyCode = customKeyCode.slice();
     displaySetting();
-    popup.classList.remove('hidden');
+    settingWindow.classList.remove('hidden');
     document.addEventListener('keydown', keySettingHandler);
   }
   else {
     releaseCheck();
-    popup.classList.add('hidden');
+    settingWindow.classList.add('hidden');
     document.removeEventListener('keydown', keySettingHandler);
   }
 }
@@ -321,6 +333,22 @@ function settingTableTag() {
     ret += '</td></tr>';
   }
   return ret;
+}
+
+// 게임 모드
+function confirmGameMode() {
+  const popup = document.getElementById('gameModeWindow'); 
+  popup.classList.add('hidden');
+  gameMode = popup.querySelector('input:checked').value;
+  changeContentOfId('gameMode', gameModeText[gameMode]);
+  if(gameMode != MARATHON) {
+    GRV = 500;
+    SDF = 50;
+    level = 1;
+    document.getElementById('levelDisplay').classList.add('hidden');
+  }
+  if(gameMode == SPRINT)
+    document.getElementById('scoreBoard').classList.add('hidden');
 }
 
 // 게임 시작
@@ -377,12 +405,14 @@ function timeCount() {
     time[0]++;
   }
   changeContentOfId('time', timeText());
+  if(time[0] == 2 && gameMode == ULTRA) gameClear();
 }
 function timeText() {
   var ret = '';
   for(var i = 0; i < 3; i++) {
-     if(i > 0) ret += ' : ';
      ret += fillLeadingZeros(time[i], 2);
+     if(i == 0) ret += ' : ';
+     else if(i == 1) ret += ' . ';
   }
   return ret;
 }
@@ -472,6 +502,7 @@ function holdBlock() {
 function stackBlock() {
   clearTimeout(fallingThread);
   clearTimeout(delayCountingThread);
+  if(gameoverCheck2()) { gameover(); return; };
   for (var i = 0; i < 4; i++) {
     var by = y + currShape[i][0];
     var bx = x + currShape[i][1];
@@ -486,19 +517,21 @@ function stackBlock() {
     scoreDisplay();
     displayingThread = setTimeout(stablizeDisplay, 2500);
   }
-  setBlock();
+  if(gameMode == SPRINT && totalClearedLines >= 40) gameClear();
+  else if(gameMode == ULTRA && time[0] == 2) gameClear();
+  else setBlock();
 }
 
 //다음 블록 출현
 function setBlock() {
-  levelUpdate();
+  if(gameMode == MARATHON) levelUpdate();
   y = SY;
   x = SX;
   currDir = 0;
   currBlock = nextBlockQueue[0];
   currShape = blockShape[currBlock];
   displayBlock();
-  if (gameoverCheck()) gameover();
+  if (gameoverCheck1()) { gameover(); return; }
   nextBlockQueue.shift();
   displayNextTable();
   if (nextBlockQueue.length < 7) setNextBag();
@@ -733,13 +766,61 @@ function setNextBag() {
 }
 
 // 게임오버
-function gameoverCheck() {
+function finishField() {
+  for (var i = 0; i < VY; i++)
+    for (var j = 0; j < VX; j++) {
+      var cellValue = gameField[i][j];
+      var cellColor = cellValue == -1 ? tileColor : finishColor;
+      cell('gameTable', i, j).style.background = cellColor;
+    }
+  console.log('finishField Complete');
+}
+function gameoverCheck1() {
   if (canMove(currShape, 0, 0)) return false;
   else return true;
 }
-function gameover() {
+function gameoverCheck2() {
+  for(var i = 0; i < 4; i++) {
+    if(isInField(currShape[i][0], currShape[i][1])) return false;
+  }
+  return true;
+}
+function gameFinish() {
+  gameFinished = true;
+  finishField();
+  clearTimeout(fallingThread);
+  clearTimeout(displayingThread);
   clearTimeout(timeCountingThread);
-  alert(`[Game Over]\n\nPlayTime < ${timeText()} >\nScore < ${score} >`);
-  init();
-  location.reload();
+  clearTimeout(movingThread);
+  clearTimeout(delayCountingThread);
+  clearTimeout(leftDASChargingThread);
+  clearTimeout(rightDASChargingThread);
+}
+function gameClear() {
+  gameFinish();
+  changeContentOfId('fieldText', 'FINISH !!');
+  setTimeout(() => {
+    if(gameMode == ULTRA)
+      alert(`[ Game Clear !! ]\n\n기록     ${score}`);
+    else if(gameMode == SPRINT)
+      alert(`[ Game Clear !! ]\n\n기록     ${timeText()}`);
+    init();
+    location.reload();
+  }, 1500)
+}
+function gameover() {
+  gameFinish();
+  changeContentOfId('fieldText', 'G A M E<br>O V E R');
+  setTimeout(() => {
+    if(gameMode == MARATHON)
+      alert(`
+      [ 게임 오버 ]\n
+      레벨     ${level}
+      시간     ${timeText()}
+      점수     ${score}`);
+    else
+      alert(`[ Game Over ]`);
+    init();
+    location.reload();
+  }, 1500)
 }

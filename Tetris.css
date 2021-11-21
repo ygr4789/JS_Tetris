@@ -119,6 +119,11 @@ body > div { margin: 20px }
 .buttonContainer {
   margin: 20px 0px;
 }
+#gameMode {
+  font-size: 20pt;
+  font-weight: bold;
+  color: white;
+}
 #buttonTable button {
   margin: 0px;
   width: 70px;
@@ -161,44 +166,35 @@ body > div { margin: 20px }
   padding: 20px 10px;
   transform: translate(-50%, -50%);
 }
-#settingWindow .content > p {
+.content > p {
   margin: 0px;
   text-align: center;
   font-size: 15pt;
   font-weight: bold;
   line-height: 1.5;
 }
-#settingWindow .content > div {
-  text-align: center;
-}
-#settingWindow table {
-  border-spacing: 20px 10px;
-}
-#settingWindow input {
-  display: none;
-}
-#settingWindow span {
+.popup .content > div:last-child { text-align: center; }
+.popup table { border-spacing: 20px 10px; }
+.popup input[type="radio"] { display: none; }
+.popup span {
   color: var(--normal-gray);
   font-size: 10pt;
 }
-#settingWindow label {
+.popup label {
   box-sizing: border-box;
   display: inline-block;
-  width: 50px;
-  padding: 3px 0px;
   color: var(--normal-gray);
   text-align: center;
-  font-size: 10pt;
   background-color: var(--light-gray);
   border: solid 2px var(--light-gray);
   border-radius: 5px;
 }
-#settingWindow input:checked + label {
+.popup input:checked + label {
   background-color: var(--t-purple);
   border-color: var(--t-purple);
   color: white;
 }
-#settingWindow button {
+.popup button {
   margin: 0px 2px;
   padding: 5px 7px;
   background-color: var(--light-gray);
@@ -207,7 +203,25 @@ body > div { margin: 20px }
   border: none;
   border-radius: 4px;
 }
-#settingWindow button:active {
+.popup button:active {
   background-color: var(--dark-gray);
   color: white;
 }
+
+#settingTable label{
+  width: 50px;
+  padding: 3px 0px;
+  font-size: 10pt;
+}
+#modeSelectTable label {
+  width: 80px;
+  padding: 4px 0px;
+  font-size: 12pt;
+  margin-right: 10px;
+}
+#modeSelectTable input:checked ~ span {
+  color: var(--t-purple); 
+  font-weight: bold;
+}
+#gameModeWindow .content { width: 470px; }
+#modeSelectTable > div { margin: 15px 20px; }

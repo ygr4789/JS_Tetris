@@ -25,7 +25,7 @@
           </div>
           <div id="timeDisplay">
             <p class="statTag">TIME</p>
-            <p id="time" class="statValue">00 : 00 : 00</p>
+            <p id="time" class="statValue">00 : 00 . 00</p>
           </div>
           <div id="linesDisplay">
             <p class="statTag">LINES</p>
@@ -58,15 +58,13 @@
       </div>
     </div>
     <div id="buttonTable">
-      <div class="buttonContainer">
-        <button>모드</button>
-      </div>
+      <div id="gameMode">ㅤ</div>
       <div class="buttonContainer">
         <button onclick="showSettingWindow(true)">설정</button>
       </div>
-      <div class="buttonContainer">
+      <!-- <div class="buttonContainer">
         <button>도움말</button>
-      </div>
+      </div> -->
     </div>
     <div id="settingWindow" class="popup hidden">
       <div class="content">
@@ -76,6 +74,31 @@
           <button onclick="initSetting()">초기화</button>
           <button onclick="confirmSetting()">확인</button>
           <button onclick="showSettingWindow(false)">닫기</button>
+        </div>
+      </div>
+    </div>
+    <div id="gameModeWindow" class="popup">
+      <div class="content">
+        <p>모드 선택</p>
+        <div id="modeSelectTable">
+          <div>
+            <input id="marathon" name="modeSelectRadio" type="radio" value="0" checked="checked"/>
+            <label for="marathon">마라톤</label>
+            <span>30레벨까지 점점 더 빠르게 내려오는 블록들을 버텨봅시다</span>
+          </div>
+          <div>
+            <input id="ultra" name="modeSelectRadio" type="radio" value="1"/>
+            <label for="ultra">울트라</label>
+            <span>2분의 제한시간 안에 최대한 높은 점수를 달성해보십시오</span>
+          </div>
+          <div>
+            <input id="sprint" name="modeSelectRadio" type="radio" value="2"/>
+            <label for="sprint">스프린트</label>
+            <span>40줄을 가능한 한 빠른 시간 안에 지우는 모드입니다</span>
+          </div>
+        </div>
+        <div>
+          <button onclick="confirmGameMode()">확인</button>
         </div>
       </div>
     </div>
