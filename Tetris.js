@@ -37,14 +37,6 @@ const lineClearText = [
 var time;
 var timeCountingThread;
 
-var GRV, // gravity
-  SDF; // softdrop speed
-var DAS = 133; // delayed auto shift
-ARR = 10; //auto repeat rate
-const delayPerLine = [
-  800, 717, 633, 550, 467, 383, 300, 217, 133, 100,
-  83, 83, 83, 67, 67, 67, 50, 50, 50, 33,
-  33, 33, 17, 17, 17, 0, 0, 0, 0, 0 ];
 
 const MY = 40, MX = 10; // field size
 const VY = 20, VX = 10; // displayed size
@@ -109,6 +101,24 @@ var inProcess; // 게임 진행 중 여부
 var gameStarted; // 게임 시작 여부
 var gameFinished; // 게임 종료 여부
 
+var GRV // gravity (delay per line)
+const delayPerLine = [
+  800, 717, 633, 550, 467, 383, 300, 217, 133, 100,
+  83, 83, 83, 67, 67, 67, 50, 50, 50, 33,
+  33, 33, 17, 17, 17, 0, 0, 0, 0, 0 ];
+  
+const speedPropId = [
+  'DAS', // delayed auto shift
+  'ARR', // auto repeat rate
+  'SDF' // softdrop delay ratio
+  ];
+const DAS = 0;
+const ARR = 1;
+const SDF = 2;
+const defaultSpeedProp = [ 133, 10, 10 ];
+var customSpeedProp = defaultSpeedProp.slice();
+var tmpSpeedProp;
+
 var keyPressed = new Array(256).fill(false);
 
 const settingWindow = document.getElementById('settingWindow');
@@ -122,9 +132,11 @@ const opKeyId = [
   'HOLD'
   ];
 const defaultKeyCode = [ 37, 39, 40, 32, 88, 90, 16 ]; 
+// left, right, down, spacebar, z, x, shift
 var customKeyCode = defaultKeyCode.slice();
 var tmpKeyCode;
 
+const gameModeWindow = document.getElementById('gameModeWindow');
 const MARATHON = 0;
 const ULTRA = 1;
 const SPRINT = 2;
@@ -149,33 +161,33 @@ function keyDownEventHandler(e) {
           leftDASChargingThread = setTimeout(() => {
             leftDASCharged = true;
             movingThread = setTimeout(autoMoveLR, 0, -1);
-          }, DAS);
+          }, customSpeedProp[DAS]);
           break;
-        case customKeyCode[1]: // right
+        case customKeyCode[1]:
           clearTimeout(movingThread);
           setTimeout(moveLR, 0, 1);
           rightDASChargingThread = setTimeout(() => {
             rightDASCharged = true;
             movingThread = setTimeout(autoMoveLR, 0, 1);
-          }, DAS);
+          }, customSpeedProp[DAS]);
           break;
       }
       if(inProcess) switch(e.keyCode) {
-        case customKeyCode[2]: // down
+        case customKeyCode[2]:
           clearTimeout(fallingThread);
           softDropIsOn = true;
           fallingThread = setTimeout(moveDown, 0);
           break;
-        case customKeyCode[3]: // spacebar
+        case customKeyCode[3]:
           setTimeout(hardDrop, 0);
           break;
-        case customKeyCode[4]: // z
+        case customKeyCode[4]:
           setTimeout(roatateClockwise, 0, 1);
           break;
-        case customKeyCode[5]: // x
+        case customKeyCode[5]:
           setTimeout(roatateClockwise, 0, 3);
           break;
-        case customKeyCode[6]: // shift
+        case customKeyCode[6]:
           setTimeout(holdBlock, 0);
           break;
       }
@@ -193,13 +205,13 @@ function keyUpEventHandler(e) {
         leftDASCharged = false;
         clearTimeout(leftDASChargingThread);
         clearTimeout(movingThread);
-        if(rightDASCharged) movingThread = setTimeout(autoMoveLR, DAS, 1);
+        if(rightDASCharged) movingThread = setTimeout(autoMoveLR, customSpeedProp[DAS], 1);
         break;
       case customKeyCode[1]: // right
         rightDASCharged = false;
         clearTimeout(rightDASChargingThread);
         clearTimeout(movingThread);
-        if(leftDASCharged) movingThread = setTimeout(autoMoveLR, DAS, -1);
+        if(leftDASCharged) movingThread = setTimeout(autoMoveLR, customSpeedProp[DAS], -1);
         break;
       case customKeyCode[2]: // down
         softDropIsOn = false;
@@ -222,24 +234,28 @@ function init() {
   y = SY;
   x = SX;
   currShape = tmpShape;
-  score = 0;
+  GRV = 500;
+  level = 1;
+  score = plusedScore = 0;
   combo = -1;
-  totalClearedLines = 0;
-  BtB = false;
+  spin = 0;
+  totalClearedLines = clearedLines = 0;
+  BtB = readyForBtB = false;
+  perfectClear = false;
   inProcess = false;
   gameStarted = false;
   gameFinished = false;
-  readyForBtB = false;
   softDropIsOn = false;
   holdedBlock = -1;
   holdUsed = false;
-  time = [0, 0, 0];
-  changeContentOfId('fieldText', 'Press F4<br>to Start');
+  time = [ 0, 0, 0 ];
   initField();
   drawField();
   drawHoldTable();
   drawNextTable();
-  drawSettingTable();
+  drawKeySettingTable();
+  statDisplay()
+  changeContentOfId('fieldText', 'Press F4<br>to Start');
 }
 function initField() {
   gameField = new Array(MY);
@@ -279,31 +295,26 @@ function drawNextTable() {
   changeContentOfId('nextTable', tableTag);
 }
 
-// 설정 창
-function keySettingHandler(e) {
-  e.preventDefault();
-  var sel = settingWindow.querySelector('input:checked');
-  if(sel) {
-    var index = parseInt(sel.value);
-    changeContentOfId(opKeyId[index], e.keyCode);
-    tmpKeyCode[index] = e.keyCode;
-    sel.checked = false;
-  }
-}
+// 설정 창 내부조작 및 표시
 function initSetting() {
   customKeyCode = defaultKeyCode.slice();
+  customSpeedProp = defaultSpeedProp.slice();
   displaySetting();
 }
 function displaySetting() {
   for (var i = 0; i < opKeyId.length; i++)
     changeContentOfId(opKeyId[i], customKeyCode[i]);
+  for (var i = 0; i < speedPropId.length; i++)
+    document.querySelectorAll('#' + speedPropId[i] + ' input').forEach((inp) => inp.value = customSpeedProp[i]);
 }
 function confirmSetting() {
   customKeyCode = tmpKeyCode.slice();
+  for (var i = 0; i < speedPropId.length; i++)
+    customSpeedProp[i] = document.querySelector('#' + speedPropId[i] + ' input').value;
   showSettingWindow(false);
 }
 function releaseCheck() {
-  var sel = settingWindow.querySelector('input:checked');
+  var sel = settingWindow.querySelector('input[type="ratio"]:checked');
   if(sel) sel.checked = false;
 }
 function showSettingWindow(visible) {
@@ -311,44 +322,107 @@ function showSettingWindow(visible) {
     tmpKeyCode = customKeyCode.slice();
     displaySetting();
     settingWindow.classList.remove('hidden');
-    document.addEventListener('keydown', keySettingHandler);
+    document.removeEventListener('keydown', keyDownEventHandler);
+    if(!document.getElementById('keySettingTable').classList.contains('hidden'))
+      document.addEventListener('keydown', keySettingHandler);
   }
   else {
     releaseCheck();
     settingWindow.classList.add('hidden');
+    document.addEventListener('keydown', keyDownEventHandler);
     document.removeEventListener('keydown', keySettingHandler);
   }
 }
-function drawSettingTable() {
-  changeContentOfId('settingTable', settingTableTag());
+
+// 설정 세부창 이동
+function moveToKeySetting() {
+  document.getElementById('keySettingTable').classList.remove("hidden");
+  document.getElementById('toSpeedSetting').classList.remove("hidden");
+  document.getElementById('speedSettingTable').classList.add("hidden");
+  document.getElementById('toKeySetting').classList.add("hidden");
+  document.addEventListener('keydown', keySettingHandler);
 }
-function settingTableTag() {
+function moveToSpeedSetting() {
+  document.getElementById('keySettingTable').classList.add("hidden");
+  document.getElementById('toSpeedSetting').classList.add("hidden");
+  document.getElementById('speedSettingTable').classList.remove("hidden");
+  document.getElementById('toKeySetting').classList.remove("hidden");
+  document.removeEventListener('keydown', keySettingHandler);
+  releaseCheck();
+}
+
+// 조작 설정 세부창
+function drawKeySettingTable() {
+  changeContentOfId('keySettingTable', keySettingTableTag());
+}
+function keySettingTableTag() {
   var ret = '';
   for (var i = 0; i < opKeyId.length; i++) {
     ret += '<tr><td>';
     ret += '<span>' + opKeyId[i] + '</span>';
     ret += '</td><td>';
     ret += '<input id="keySettingRadio' + String(i) + '" name="keySettingRadio" type="radio" value="' + String(i) + '"/>';
-    ret += '<label id="' + opKeyId[i] + '" for="keySettingRadio' + String(i) + '">' + String(customKeyCode[i]) + '</label>';
+    ret += '<label id="' + opKeyId[i] + '" for="keySettingRadio' + String(i) + '"></label>';
     ret += '</td></tr>';
   }
   return ret;
 }
-
-// 게임 모드
-function confirmGameMode() {
-  const popup = document.getElementById('gameModeWindow'); 
-  popup.classList.add('hidden');
-  gameMode = popup.querySelector('input:checked').value;
-  changeContentOfId('gameMode', gameModeText[gameMode]);
-  if(gameMode != MARATHON) {
-    GRV = 500;
-    SDF = 50;
-    level = 1;
-    document.getElementById('levelDisplay').classList.add('hidden');
+function keySettingHandler(e) {
+  e.preventDefault();
+  var sel = settingWindow.querySelector('input[type="radio"]:checked');
+  if (sel) {
+    var index = parseInt(sel.value);
+    changeContentOfId(opKeyId[index], e.keyCode);
+    tmpKeyCode[index] = e.keyCode;
+    sel.checked = false;
   }
+}
+
+// 속도 설정 세부창
+const slideContainers = settingWindow.querySelectorAll('.slideContainer');
+slideContainers.forEach((div, idx1) => {
+  const inputs = div.querySelectorAll('input');
+  inputs.forEach((inp,idx2) => inp.addEventListener('input', () => 
+    inputs[1-idx2].value = inputs[idx2].value));
+  inputs[1].addEventListener('change', (e) => {
+    var correction = null;
+    if(e.target.value == '')
+      correction = defaultSpeedProp[idx1];
+    else if(parseInt(e.target.value) < parseInt(e.target.min))
+      correction = e.target.min;
+    else if(parseInt(e.target.value) > parseInt(e.target.max))
+      correction = e.target.max;
+    if(correction != null) inputs[0].value = inputs[1].value = correction;
+  })
+});
+
+// 게임 모드 변경 및 창 표시
+function showGameModeWindow(visible) {
+  if (visible)
+    gameModeWindow.classList.remove('hidden');
+  else
+    gameModeWindow.classList.add('hidden');
+}
+function confirmGameMode() { 
+  showGameModeWindow(false);
+  gameMode = gameModeWindow.querySelector('input[type="radio"]:checked').value;
+  changeContentOfId('gameMode', gameModeText[gameMode]);
+  if(gameMode != MARATHON)
+    document.getElementById('levelDisplay').classList.add('hidden');
+  else
+    document.getElementById('levelDisplay').classList.remove('hidden');
   if(gameMode == SPRINT)
     document.getElementById('scoreBoard').classList.add('hidden');
+  else
+    document.getElementById('scoreBoard').classList.remove('hidden');
+}
+
+// 도움말
+function showHelpWindow(visible) {
+  if (visible)
+    document.getElementById('helpWindow').classList.remove('hidden');
+  else
+    document.getElementById('helpWindow').classList.add('hidden');
 }
 
 // 게임 시작
@@ -469,7 +543,7 @@ function updateField() {
 
 //소프트드롭
 function fallingSpeed() {
-  return softDropIsOn ? SDF : GRV;
+  return softDropIsOn ? GRV / customSpeedProp[SDF] : GRV;
 }
 
 //하드드롭
@@ -621,7 +695,6 @@ function baseScore() {
 function levelUpdate() {
   level = Math.min(30, 1 + parseInt(totalClearedLines / 10));
   GRV = delayPerLine[level-1]
-  SDF = GRV/10;
   changeContentOfId('level', level);
 }
 
@@ -701,7 +774,7 @@ function moveLR(dir) {
 }
 function autoMoveLR(dir) {
   moveLR(dir);
-  movingThread = setTimeout(autoMoveLR, ARR, dir);
+  movingThread = setTimeout(autoMoveLR, customSpeedProp[ARR], dir);
 }
 
 //이동 가능 여부 확인
@@ -801,11 +874,11 @@ function gameClear() {
   changeContentOfId('fieldText', 'FINISH !!');
   setTimeout(() => {
     if(gameMode == ULTRA)
-      alert(`[ Game Clear !! ]\n\n기록     ${score}`);
+      alert(`[ 울트라 모드 종료 ]\n\n기록     ${score}`);
     else if(gameMode == SPRINT)
-      alert(`[ Game Clear !! ]\n\n기록     ${timeText()}`);
+      alert(`[ 스프린트 모드 종료 ]\n\n기록     ${timeText()}`);
     init();
-    location.reload();
+    // location.reload();
   }, 1500)
 }
 function gameover() {
@@ -819,8 +892,8 @@ function gameover() {
       시간     ${timeText()}
       점수     ${score}`);
     else
-      alert(`[ Game Over ]`);
+      alert(`[ 게임 오버 ]`);
     init();
-    location.reload();
+    // location.reload();
   }, 1500)
 }

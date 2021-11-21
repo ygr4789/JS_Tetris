@@ -58,18 +58,45 @@
       </div>
     </div>
     <div id="buttonTable">
-      <div id="gameMode">ㅤ</div>
+      <div id="gameMode" onclick="showGameModeWindow(true)">ㅤ</div>
       <div class="buttonContainer">
         <button onclick="showSettingWindow(true)">설정</button>
       </div>
-      <!-- <div class="buttonContainer">
+      <div class="buttonContainer" onclick="showHelpWindow(true)">
         <button>도움말</button>
-      </div> -->
+      </div>
     </div>
     <div id="settingWindow" class="popup hidden">
       <div class="content">
+        <span id="toKeySetting" class="hidden" onclick="moveToKeySetting()">&lt; 조작</span>
+        <span id="toSpeedSetting" onclick="moveToSpeedSetting()">속도 &gt;</span>
         <p>설정</p>
-        <table id="settingTable"></table>
+        <div id="settingMain">
+          <table id="keySettingTable"></table>
+          <div id="speedSettingTable" class="hidden">
+            <div>
+              <span title="좌우 이동 키 지속 입력 판정까지의 지연시간 (ms)">DAS</span>
+              <div id="DAS" class="slideContainer">
+                <input type="range" min="0" max="1000">
+                <input type="number" min="0" max="1000">
+              </div>
+            </div>
+            <div>
+              <span title="좌우 이동 키 지속 입력시의 한 칸 당 시간간격 (ms)">ARR</span>
+              <div id="ARR" class="slideContainer">
+                <input type="range" min="0" max="100">
+                <input type="number" min="0" max="100">
+              </div>
+            </div>
+            <div>
+              <span title="자유낙하와 소프트 드랍의 속도 비율">SDF</span>
+              <div id="SDF" class="slideContainer">
+                <input type="range" min="2" max="20">
+                <input type="number" min="2" max="20">
+              </div>
+            </div>
+          </div>
+        </div>
         <div>
           <button onclick="initSetting()">초기화</button>
           <button onclick="confirmSetting()">확인</button>
@@ -99,6 +126,25 @@
         </div>
         <div>
           <button onclick="confirmGameMode()">확인</button>
+        </div>
+      </div>
+    </div>
+    <div id="helpWindow" class="popup hidden">
+      <div class="content">
+        <p>도움말</p>
+        <div id="readme">
+          <p>
+            기본 조작법은 다음과 같습니다.<br>
+            좌우 이동 : 키보드 좌우<br>
+            시계/반시계 회전 : Z, X<br>
+            소프트드랍 : 키보드 하<br>
+            하드드랍 : Space<br>
+            홀드 : Shift<br>
+          </p>
+          <p>Copyrightⓒ2021 Yongdori All rights reserved.</p>
+        </div>
+        <div>
+          <button onclick="showHelpWindow(false)">닫기</button>
         </div>
       </div>
     </div>

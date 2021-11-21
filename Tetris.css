@@ -1,13 +1,13 @@
 :root {
   --t-purple: #AF2989;
+  --light-purple: #FFE0F6;
   --dark-gray: #1B1D1F;
   --normal-gray: #787276;
   --light-gray: #EBECF0;
 }
-
 body {
   background-color: var(--dark-gray);
-  font-family: 'Corbel';
+  font-family: 'Malgun Gothic', sans-serif;
 }
 body > div, #main > div { float: left; }
 body > div { margin: 20px }
@@ -16,6 +16,7 @@ body > div { margin: 20px }
   border: 1px solid white;
   border-top: 0px;
 }
+button { cursor: pointer; }
 
 /* main div1 */
 .blockBox { margin: 10px; }
@@ -123,7 +124,9 @@ body > div { margin: 20px }
   font-size: 20pt;
   font-weight: bold;
   color: white;
+  cursor: pointer;
 }
+#gameMode:active { color: var(--t-purple); }
 #buttonTable button {
   margin: 0px;
   width: 70px;
@@ -141,7 +144,8 @@ body > div { margin: 20px }
   color: white;
 }
 
-/* popup */
+/* popup common */
+.hidden { display: none; }
 .popup {
   background: rgba(0, 0, 0, .7);
   backdrop-filter: blur(4px);
@@ -152,9 +156,6 @@ body > div { margin: 20px }
   height: 100vh;
   margin: 0px;
   z-index: 1;
-}
-.hidden {
-  display: none;
 }
 .content {
   background-color: white;
@@ -174,8 +175,18 @@ body > div { margin: 20px }
   line-height: 1.5;
 }
 .popup .content > div:last-child { text-align: center; }
-.popup table { border-spacing: 20px 10px; }
 .popup input[type="radio"] { display: none; }
+.popup input[type="number"] {
+  padding: 3px 8px;
+  width: 35px;
+  color: var(--normal-gray);
+  border: none;
+  border-radius: 5px;
+}
+.popup input[type="number"]:focus {
+  background-color: var(--light-gray);
+  border-color: var(--dark-gray);
+}
 .popup span {
   color: var(--normal-gray);
   font-size: 10pt;
@@ -188,6 +199,7 @@ body > div { margin: 20px }
   background-color: var(--light-gray);
   border: solid 2px var(--light-gray);
   border-radius: 5px;
+  cursor: pointer;
 }
 .popup input:checked + label {
   background-color: var(--t-purple);
@@ -208,11 +220,48 @@ body > div { margin: 20px }
   color: white;
 }
 
-#settingTable label{
+/* Setting common */
+#toKeySetting, #toSpeedSetting {
+  position: absolute;
+  top: 28px;
+  font-size: 9pt;
+}
+#toKeySetting { left: 20px; }
+#toSpeedSetting { right: 20px; }
+#settingMain {
+  width: 250px;
+  height: 320px;
+  border: solid 1px white;
+}
+
+/* KeySetting */
+#keySettingTable {
+  margin: 20px auto;
+  border-spacing: 0px 10px;
+}
+#keySettingTable tr > td:first-child { width: 150px; }
+#keySettingTable label {
   width: 50px;
   padding: 3px 0px;
   font-size: 10pt;
 }
+
+/* SpeedSetting */
+#speedSettingTable {
+  position: relative;
+  margin: 20px;
+}
+#speedSettingTable > div { margin: 35px 0px; }
+#speedSettingTable span { line-height: 2.0; }
+#speedSettingTable input[type="number"] {
+  text-align: right;
+  position: absolute;
+  right: 5px;
+}
+
+/* ModeSelect */
+#gameModeWindow .content { width: 470px; }
+#modeSelectTable > div { margin: 15px 20px; }
 #modeSelectTable label {
   width: 80px;
   padding: 4px 0px;
@@ -223,5 +272,10 @@ body > div { margin: 20px }
   color: var(--t-purple); 
   font-weight: bold;
 }
-#gameModeWindow .content { width: 470px; }
-#modeSelectTable > div { margin: 15px 20px; }
+
+/* help */
+#readme {
+  font-size: 10pt;
+  text-align: left;
+  margin: 10px 20px;
+}
