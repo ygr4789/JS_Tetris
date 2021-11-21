@@ -144,10 +144,9 @@ const gameModeText = ['마라톤', '울트라', '스프린트'];
 var gameMode = -1;
 
 //키 입력 처리
-document.addEventListener('keydown', keyDownEventHandler);
 function keyDownEventHandler(e) {
   e.preventDefault();
-  if(e.keyCode == 115 && !gameStarted && gameMode != -1) {
+  if(e.keyCode == 115 && !gameStarted) {
     gameStarted = true;
     startGame();
   }
@@ -320,7 +319,7 @@ function releaseCheck() {
   if(sel) sel.checked = false;
 }
 function showSettingWindow(visible) {
-  if(visible) {
+  if(!gameStarted && visible) {
     tmpKeyCode = customKeyCode.slice();
     displaySetting();
     settingWindow.classList.remove('hidden');
@@ -400,10 +399,14 @@ slideContainers.forEach((div, idx1) => {
 
 // 게임 모드 변경 및 창 표시
 function showGameModeWindow(visible) {
-  if (visible)
+  if (!gameStarted && visible) {
     gameModeWindow.classList.remove('hidden');
-  else
+    document.removeEventListener('keydown', keyDownEventHandler);
+  }
+  else {
     gameModeWindow.classList.add('hidden');
+    document.addEventListener('keydown', keyDownEventHandler);
+  }
 }
 function confirmGameMode() { 
   showGameModeWindow(false);
@@ -421,10 +424,14 @@ function confirmGameMode() {
 
 // 도움말
 function showHelpWindow(visible) {
-  if (visible)
+  if (!gameStarted && visible) {
     document.getElementById('helpWindow').classList.remove('hidden');
-  else
+    document.removeEventListener('keydown', keyDownEventHandler);
+  }
+  else {
     document.getElementById('helpWindow').classList.add('hidden');
+    document.addEventListener('keydown', keyDownEventHandler);
+  }
 }
 
 // 게임 시작
