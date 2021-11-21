@@ -254,7 +254,9 @@ function init() {
   drawHoldTable();
   drawNextTable();
   drawKeySettingTable();
-  statDisplay()
+  statDisplay();
+  scoreDisplay();
+  changeContentOfId('time', timeText());
   changeContentOfId('fieldText', 'Press F4<br>to Start');
 }
 function initField() {
