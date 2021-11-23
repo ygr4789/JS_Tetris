@@ -15,21 +15,21 @@
         </div>
         <div id="statBoard">
           <div id="infoDisplay">
-            <p id="spin">ㅤ</p>
-            <p id="lineClear">ㅤ</p>
-            <p id="backToBack">ㅤ</p>
+            <p id="spin"></p>
+            <p id="lineClear"></p>
+            <p id="backToBack"></p>
             <p id="combo">
-              <span id="comboValue">ㅤ</span>
-              <span id="comboText">ㅤ</span>
+              <span id="comboValue"></span>
+              <span id="comboText"></span>
             </p>
           </div>
           <div id="timeDisplay">
             <p class="statTag">TIME</p>
-            <p id="time" class="statValue">00 : 00 . 00</p>
+            <p id="time" class="statValue"></p>
           </div>
           <div id="linesDisplay">
             <p class="statTag">LINES</p>
-            <p id="lines" class="statValue">0</p>
+            <p id="lines" class="statValue"></p>
           </div>
         </div>
       </div>
@@ -40,7 +40,7 @@
         </div>
         <p id="levelDisplay">
           <span id="levelTag">L E V E L</span>
-          <span id="level">1</span>
+          <span id="level"></span>
         </p>
       </div>
       <div>
@@ -51,14 +51,14 @@
         <div id="scoreBoard">
           <div id="scoreDisplay">
             <p class="statTag">SCORE</p>
-            <p id="score" class="statValue">0</p>
-            <p id="plus">ㅤ</p>
+            <p id="score" class="statValue"></p>
+            <p id="plus"></p>
           </div>
         </div>
       </div>
     </div>
     <div id="buttonTable">
-      <div id="gameMode" onclick="showGameModeWindow(true)">ㅤ</div>
+      <div id="gameMode" onclick="showGameModeWindow(true)">모드</div>
       <div class="buttonContainer">
         <button onclick="showSettingWindow(true)">설정</button>
       </div>
@@ -68,34 +68,12 @@
     </div>
     <div id="settingWindow" class="popup hidden">
       <div class="content">
-        <span id="toKeySetting" class="hidden" onclick="moveToKeySetting()">&lt; 조작</span>
-        <span id="toSpeedSetting" onclick="moveToSpeedSetting()">속도 &gt;</span>
+        <span id="toKeySetting" class="hidden" onclick="changeSettingMainContentsTo(KEYSETTING)">&lt; 조작</span>
+        <span id="toSpeedSetting" onclick="changeSettingMainContentsTo(SPEEDSETTING)">속도 &gt;</span>
         <p>설정</p>
         <div id="settingMain">
           <table id="keySettingTable"></table>
-          <div id="speedSettingTable" class="hidden">
-            <div>
-              <span title="좌우 이동 키 지속 입력 판정까지의 지연시간 (ms)">DAS</span>
-              <div id="DAS" class="slideContainer">
-                <input type="range" min="0" max="1000">
-                <input type="number" min="0" max="1000">
-              </div>
-            </div>
-            <div>
-              <span title="좌우 이동 키 지속 입력시의 한 칸 당 시간간격 (ms)">ARR</span>
-              <div id="ARR" class="slideContainer">
-                <input type="range" min="0" max="100">
-                <input type="number" min="0" max="100">
-              </div>
-            </div>
-            <div>
-              <span title="자유낙하와 소프트 드랍의 속도 비율">SDF</span>
-              <div id="SDF" class="slideContainer">
-                <input type="range" min="2" max="20">
-                <input type="number" min="2" max="20">
-              </div>
-            </div>
-          </div>
+          <div id="speedSettingTable" class="hidden"></div>
         </div>
         <div>
           <button onclick="initSetting()">초기화</button>
