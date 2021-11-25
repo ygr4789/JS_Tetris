@@ -57,29 +57,20 @@
         </div>
       </div>
     </div>
+    <div id="leaderBoard">
+      <p class="tableTag">LEADERBOARD</p>
+      <table id="leaderBoardTable"></table>
+    </div>
     <div id="buttonTable">
-      <div id="gameMode" onclick="showGameModeWindow(true)">모드</div>
+      <div id="gameMode" onclick="showGameModeWindow(true)">마라톤</div>
       <div class="buttonContainer">
         <button onclick="showSettingWindow(true)">설정</button>
       </div>
+      <div class="buttonContainer" onclick="showStyleWindow(true)">
+        <button>그래픽</button>
+      </div>
       <div class="buttonContainer" onclick="showHelpWindow(true)">
         <button>도움말</button>
-      </div>
-    </div>
-    <div id="settingWindow" class="popup hidden">
-      <div class="content">
-        <span id="toKeySetting" class="hidden" onclick="changeSettingMainContentsTo(KEYSETTING)">&lt; 조작</span>
-        <span id="toSpeedSetting" onclick="changeSettingMainContentsTo(SPEEDSETTING)">속도 &gt;</span>
-        <p>설정</p>
-        <div id="settingMain">
-          <table id="keySettingTable"></table>
-          <div id="speedSettingTable" class="hidden"></div>
-        </div>
-        <div>
-          <button onclick="initSetting()">초기화</button>
-          <button onclick="confirmSetting()">확인</button>
-          <button onclick="showSettingWindow(false)">닫기</button>
-        </div>
       </div>
     </div>
     <div id="gameModeWindow" class="popup">
@@ -107,14 +98,39 @@
         </div>
       </div>
     </div>
+    <div id="settingWindow" class="popup hidden">
+      <div class="content">
+        <span id="toKeySetting" class="hidden" onclick="changeSettingMainContentsTo(KEYSETTING)">&lt; 조작</span>
+        <span id="toSpeedSetting" onclick="changeSettingMainContentsTo(SPEEDSETTING)">속도 &gt;</span>
+        <p>설정</p>
+        <div id="settingMain">
+          <table id="keySettingTable"></table>
+          <div id="speedSettingTable" class="hidden"></div>
+        </div>
+        <div>
+          <button onclick="initSetting()">초기화</button>
+          <button onclick="confirmSetting()">확인</button>
+          <button onclick="showSettingWindow(false)">닫기</button>
+        </div>
+      </div>
+    </div>
+    <div id="styleWindow" class="popup hidden">
+      <div class="content">
+        <p>그래픽 </p>
+        <div id="styleSelectTable"></div>
+        <div>
+          <button onclick="confirmStyle()">확인</button>
+        </div>
+      </div>
+    </div>
     <div id="helpWindow" class="popup hidden">
       <div class="content">
         <p>도움말</p>
         <div id="readme">
           <p>
-            기본 조작법은 다음과 같습니다.<br>
-            좌우 이동 : 키보드 좌우<br>
-            시계/반시계 회전 : Z, X<br>
+            기본 조작법은 다음과 같습니다.<br><br>
+            좌/우 이동 : 키보드 좌/우<br>
+            반시계/시계 방향 회전 : Z / X<br>
             소프트드랍 : 키보드 하<br>
             하드드랍 : Space<br>
             홀드 : Shift<br>

@@ -152,7 +152,16 @@ const MARATHON = 0;
 const ULTRA = 1;
 const SPRINT = 2;
 const gameModeText = ['마라톤', '울트라', '스프린트'];
-var gameMode;
+var gameMode = MARATHON;
+
+const styleId = ['ROUND', 'ANGLED', 'COMPACT'];
+const stylePropArr = [
+  ['seperate', '14px', '2px'],
+  ['seperate', '14px', '0px'],
+  ['collapse', '16px', '0px']
+  ];
+
+var rankingArr;
 
 //키 입력 처리
 function keyDownEventHandler(e) {
@@ -198,7 +207,7 @@ function keyDownEventHandler(e) {
           setTimeout(roatateClockwise, 0, 3);
           break;
         case customKeyCode[6]:
-          setTimeout(holdBlock, 0);
+          if(!holdUsed) setTimeout(holdBlock, 0);
           break;
       }
     }
@@ -240,7 +249,7 @@ function keyUpEventHandler(e) {
 
 // HTML 호출
 function cell(name, y, x) {
-  return document.getElementById(name + String(y) + String(x));
+  return document.getElementById(`${name}${y}${x}`);
 }
 function changeContentsOfId(id, contents) {
   document.getElementById(id).innerHTML = contents;
@@ -288,11 +297,13 @@ function init() {
   drawField();
   drawHoldTable();
   drawNextTable();
+  drawLeaderBoardTable();
   drawKeySettingTable();
   drawSpeedSettingTable();
+  drawStyleSelectTable();
   statDisplay();
   scoreDisplay();
-  levelUpdate();
+  updateLevel();
   changeContentsOfId('time', timeText());
   changeContentsOfId('fieldText', 'Press F4<br>to Start');
 }
@@ -308,7 +319,7 @@ function drawField() {
   for (var i = VY - 1; i >= 0; i--) {
     fieldTag += '<tr>';
     for (var j = 0; j < VX; j++)
-      fieldTag += '<td id="gameTable' + String(i) + String(j) + '"></td>';
+      fieldTag += `<td id="gameTable${i}${j}"></td>`;
     fieldTag += '</tr>';
   }
   fieldTag += '</table>';
@@ -319,7 +330,7 @@ function blockTag(name) {
   for (var i = 1; i >= 0; i--) {
     ret += '<tr>';
     for (var j = 0; j < 4; j++)
-      ret += '<td id="' + name + String(i) + String(j) + '"></td>';
+      ret += `<td id="${name}${i}${j}"></td>`;
     ret += '</tr>';
   }
   ret += '</table>';
@@ -330,7 +341,7 @@ function drawHoldTable() {
 }
 function drawNextTable() {
   var tableTag = '';
-  for (var i = 0; i < 5; i++) tableTag += blockTag('nextBox' + String(i));
+  for (var i = 0; i < 5; i++) tableTag += blockTag(`nextBox${i}`);
   changeContentsOfId('nextTable', tableTag);
 }
 
@@ -397,8 +408,8 @@ function keySettingTableTag() {
     ret += '<tr><td>';
     ret += '<span>' + opKeyId[i] + '</span>';
     ret += '</td><td>';
-    ret += '<input id="keySettingRadio' + String(i) + '" name="keySettingRadio" type="radio" value="' + String(i) + '"/>';
-    ret += '<label id="' + opKeyId[i] + '" for="keySettingRadio' + String(i) + '"></label>';
+    ret += `<input id="keySettingRadio${i}" name="keySettingRadio" type="radio" value="${i}"/>`;
+    ret += `<label id="${opKeyId[i]}" for="keySettingRadio${i}"></label>`;
     ret += '</td></tr>';
   }
   return ret;
@@ -456,6 +467,41 @@ function confirmGameMode() {
   changeContentsOfId('gameMode', gameModeText[gameMode]);
   changeVisibilityOfId('levelDisplay', gameMode == MARATHON);
   changeVisibilityOfId('scoreBoard', gameMode != SPRINT);
+  drawLeaderBoardTable();
+}
+
+// 그래픽 변경 및 창 표시
+function showStyleWindow(visible) {
+  showPopupOfId('styleWindow', visible);
+}
+function confirmStyle() {
+  showStyleWindow(false);
+  var style = document.querySelector('#styleSelectTable input[type="radio"]:checked').value;
+  for(var i = 0; i < stylePropArr[style].length; i++)
+    document.documentElement.style.setProperty(`--block-style-property${i}`, stylePropArr[style][i]);
+}
+function drawStyleSelectTable() {
+  changeContentsOfId('styleSelectTable', styleSelectTableTag());
+  for(var i = 0; i < styleId.length; i++) {
+    var table = document.getElementById(styleId[i]);
+    table.style.borderCollapse = stylePropArr[i][0];
+    table.querySelectorAll('td').forEach((cell) => {
+      cell.style.width = cell.style.height = stylePropArr[i][1];
+      cell.style.borderRadius = stylePropArr[i][2];
+    })
+  }
+}
+function styleSelectTableTag() {
+  var ret = '';
+  for(var i = 0; i < styleId.length; i++) {
+    ret += '<div>';
+    ret += `<input id="style${i}" name="styleSelectRadio" type="radio" value="${i}"${i == 0 ? ' checked="checked"' : ''}/>`;
+    ret += `<label for="style${i}">${styleId[i]}</label>`;
+    ret += `<table id="${styleId[i]}">`;
+    ret += '<tr><td></td><td></td></tr><tr><td></td><td></td></tr>';
+    ret += '</table></div>';
+  }
+  return ret;
 }
 
 // 도움말
@@ -500,6 +546,9 @@ function timeText() {
   }
   return ret;
 }
+function timeValue() {
+  return time[2]*6000 + time[1]*100 + time[0];
+}
 
 //숫자 출력
 function fillLeadingZeros(num, width) {
@@ -522,7 +571,7 @@ function displayHoldTable() {
 }
 function displayNextTable() {
   for (var i = 0; i < 5; i++)
-    displayBlockInTable('nextBox' + String(i), nextBlockQueue[i]);
+    displayBlockInTable(`nextBox${i}`, nextBlockQueue[i]);
 }
 
 //줄 지우기
@@ -614,7 +663,7 @@ function stackBlock() {
 
 // 다음 블록 출현
 function setBlock() {
-  if(gameMode == MARATHON) levelUpdate();
+  if(gameMode == MARATHON) updateLevel();
   y = SY;
   x = SX;
   currDir = 0;
@@ -708,7 +757,7 @@ function baseScore() {
 }
 
 // 레벨 갱신
-function levelUpdate() {
+function updateLevel() {
   level = Math.min(30, 1 + parseInt(totalClearedLines / 10));
   delayPerLine = delayPerLineByLevel[level-1]
   changeContentsOfId('level', level);
@@ -862,7 +911,6 @@ function finishField() {
       var cellColor = cellValue == -1 ? tileColor : finishColor;
       cell('gameTable', i, j).style.background = cellColor;
     }
-  console.log('finishField Complete');
 }
 function gameoverCheck1() {
   if (canMove(currShape, 0, 0)) return false;
@@ -889,11 +937,15 @@ function gameClear() {
   gameFinish();
   changeContentsOfId('fieldText', 'FINISH !!');
   setTimeout(() => {
-    if(gameMode == ULTRA)
+    if(gameMode == ULTRA) {
       alert(`[ 울트라 모드 종료 ]\n\n기록     ${score}`);
-    else if(gameMode == SPRINT)
+      updateRanking(fillLeadingZeros(score, 8), score);
+    }
+    else if(gameMode == SPRINT) {
       alert(`[ 스프린트 모드 종료 ]\n\n기록     ${timeText()}`);
-    init();
+      updateRanking(timeText(), -timeValue());
+    }
+    setTimeout(init, 0);
     // location.reload();
   }, 1500)
 }
@@ -901,15 +953,55 @@ function gameover() {
   gameFinish();
   changeContentsOfId('fieldText', 'G A M E<br>O V E R');
   setTimeout(() => {
-    if(gameMode == MARATHON)
+    if(gameMode == MARATHON) {
       alert(`
       [ 마라톤 모드 종료 ]\n
       레벨     ${level}
       시간     ${timeText()}
       점수     ${score}`);
-    else
+      updateRanking(fillLeadingZeros(score, 8), score);
+    }
+    else {
       alert(`[ 게임 오버 ]`);
-    init();
+    }
+    setTimeout(init, 0);
     // location.reload();
   }, 1500)
+}
+
+// 순위표 관리
+function updateRanking(newRecord, newValue) {
+  if(newValue > rankingArr[rankingArr.length-1].value) {
+    var newName = prompt('[ 신기록 !! ]\n\n이름을 입력하십시오 (8자 제한)');
+    newName = newName.substr(0, 8);
+    var struct = { name: newName, record: newRecord, value: newValue };
+    rankingArr.push(struct);
+    rankingArr.sort((a, b) => { return b.value - a.value; });
+    rankingArr.pop();
+    localStorage.setItem(`tetrisRanking${gameMode}`, JSON.stringify(rankingArr));
+  };
+}
+function drawLeaderBoardTable() {
+  var tmp = localStorage.getItem(`tetrisRanking${gameMode}`);
+  if(tmp == null) {
+    rankingArr = new Array(10);
+    for(var i = 0; i < rankingArr.length; i++)
+      rankingArr[i] = gameMode == SPRINT ?
+        { name: '-', record: '00 : 00 . 00' , value: -1e9 }:
+        { name: '-', record: '00000000' , value: 0 };
+  }
+  else rankingArr = JSON.parse(tmp);
+  console.log(rankingArr);
+  changeContentsOfId('leaderBoardTable', leaderBoardTableTag());
+}
+function leaderBoardTableTag() {
+  var ret = '';
+  for(var i = 0; i < rankingArr.length; i++) {
+    ret += '<tr>';
+    ret += `<td>${i+1}</td>`;
+    ret += `<td class="rankingName">${rankingArr[i].name}</td>`;
+    ret += `<td class="rankingRecord">${rankingArr[i].record}</td>`;
+    ret += '</tr>';
+  }
+  return ret;
 }
