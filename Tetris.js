@@ -160,6 +160,7 @@ const stylePropArr = [
   ['seperate', '14px', '0px'],
   ['collapse', '16px', '0px']
   ];
+var style = 0;
 
 var rankingArr;
 
@@ -472,11 +473,13 @@ function confirmGameMode() {
 
 // 그래픽 변경 및 창 표시
 function showStyleWindow(visible) {
+  if(document.querySelector('#styleSelectTable input[type="radio"]:checked') == null)
+    document.getElementById(`style${style}`).checked = true;
   showPopupOfId('styleWindow', visible);
 }
 function confirmStyle() {
   showStyleWindow(false);
-  var style = document.querySelector('#styleSelectTable input[type="radio"]:checked').value;
+  style = document.querySelector('#styleSelectTable input[type="radio"]:checked').value;
   for(var i = 0; i < stylePropArr[style].length; i++)
     document.documentElement.style.setProperty(`--block-style-property${i}`, stylePropArr[style][i]);
 }
@@ -495,7 +498,7 @@ function styleSelectTableTag() {
   var ret = '';
   for(var i = 0; i < styleId.length; i++) {
     ret += '<div>';
-    ret += `<input id="style${i}" name="styleSelectRadio" type="radio" value="${i}"${i == 0 ? ' checked="checked"' : ''}/>`;
+    ret += `<input id="style${i}" name="styleSelectRadio" type="radio" value="${i}"/>`;
     ret += `<label for="style${i}">${styleId[i]}</label>`;
     ret += `<table id="${styleId[i]}">`;
     ret += '<tr><td></td><td></td></tr><tr><td></td><td></td></tr>';
@@ -991,7 +994,6 @@ function drawLeaderBoardTable() {
         { name: '-', record: '00000000' , value: 0 };
   }
   else rankingArr = JSON.parse(tmp);
-  console.log(rankingArr);
   changeContentsOfId('leaderBoardTable', leaderBoardTableTag());
 }
 function leaderBoardTableTag() {
