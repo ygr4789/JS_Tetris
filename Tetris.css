@@ -14,7 +14,7 @@ body {
 }
 body > div, #main > div { float: left; }
 body > div { margin: 20px }
-#main > div:first-child { width: 150px; }
+#main > div:first-child { width: 160px; }
 .coloumn {
   border: 1px solid white;
   border-top: 0px;
@@ -73,7 +73,6 @@ button { cursor: pointer; }
   line-height: 1.8;
 }
 .statValue { font-size: 12pt; }
-
 #plus {
   font-size: 8pt;
   line-height: 2.0;
@@ -102,8 +101,8 @@ button { cursor: pointer; }
   margin: 0px 7px;
 }
 #levelTag {
-  font-weight: bold;
   font-size: 12pt;
+  font-weight: bold;
 }
 #level {
   font-size: 20pt;
@@ -178,7 +177,7 @@ button { cursor: pointer; }
   margin: 0px;
   z-index: 1;
 }
-.content {
+.popup .content {
   background-color: white;
   position: relative;
   top: 50%;
@@ -188,14 +187,13 @@ button { cursor: pointer; }
   padding: 20px 10px;
   transform: translate(-50%, -50%);
 }
-.content > p {
+.popup .content > p {
   margin: 0px;
   text-align: center;
   font-size: 15pt;
   font-weight: bold;
   line-height: 1.5;
 }
-.popup .content > div:last-child { text-align: center; }
 .popup input[type="radio"] { display: none; }
 .popup input[type="number"] {
   padding: 3px 8px;
@@ -227,6 +225,7 @@ button { cursor: pointer; }
   border-color: var(--t-purple);
   color: white;
 }
+.popup .content > div:last-child { text-align: center; }
 .popup button {
   margin: 0px 2px;
   padding: 5px 7px;
@@ -281,7 +280,6 @@ button { cursor: pointer; }
 }
 
 /* ModeSelect, StyleSelect */
-#gameModeWindow .content { width: 470px; }
 #modeSelectTable > div, #styleSelectTable > div { margin: 15px 20px; }
 #modeSelectTable label, #styleSelectTable label {
   padding: 4px 0px;
