@@ -139,12 +139,13 @@ const opKeyId = [
   'MOVE RIGHT',
   'SOFT DROP',
   'HARD DROP',
-  'ROTATE CCW',
   'ROTATE CW',
+  'ROTATE CCW',
   'HOLD'
   ];
 const defaultKeyCode = [ 37, 39, 40, 32, 88, 90, 16 ]; 
 // left, right, down, spacebar, z, x, shift
+const keyName = [,,,,,,,,'backspace','tab',,,,'enter',,,'shift','ctrl (right)','alt (right)',,'caps lock',,,,,,,'esc',,,,,'space',,,,,'left','up','right','down',,,,,'insert','delete',,'0','1','2','3','4','5','6','7','8','9',,,,,,,,'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',,,,,,,,,,,,,,,,,,,,,,'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,';','=',',','-','.','/','\'',,,,,,,,,,,,,,,,,,,,,,,,,,,'[','\\',']',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,];
 var customKeyCode = defaultKeyCode.slice();
 var tmpKeyCode;
 
@@ -368,7 +369,7 @@ function initSetting() {
 }
 function displaySetting() {
   for (var i = 0; i < opKeyId.length; i++)
-    changeContentsOfId(opKeyId[i], customKeyCode[i]);
+    changeContentsOfId(opKeyId[i], keyNameOf(customKeyCode[i]));
   for (var i = 0; i < speedPropId.length; i++)
     document.querySelectorAll('#' + speedPropId[i] + ' input').forEach((inp) =>
       inp.value = customSpeedProp[i]);
@@ -420,10 +421,13 @@ function keySettingHandler(e) {
   if (sel) {
     e.preventDefault();
     var index = parseInt(sel.value);
-    changeContentsOfId(opKeyId[index], e.keyCode);
+    changeContentsOfId(opKeyId[index], keyNameOf(e.keyCode));
     tmpKeyCode[index] = e.keyCode;
     sel.checked = false;
   }
+}
+function keyNameOf(code) {
+  return code == null ? 'unknown' : keyName[code];
 }
 
 // 속도 설정 세부창
@@ -550,7 +554,7 @@ function timeText() {
   return ret;
 }
 function timeValue() {
-  return time[2]*6000 + time[1]*100 + time[0];
+  return time[0]*6000 + time[1]*100 + time[2];
 }
 
 //숫자 출력
