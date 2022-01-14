@@ -118,6 +118,10 @@
       <div class="content">
         <p>스타일</p>
         <div id="styleSelectTable"></div>
+        <div id="ghostSettingContainer">
+          <input id="ghostCheckBox" type="checkbox">
+          <label for="ghostCheckBox">GHOST</label>
+        </div>
         <div>
           <button onclick="confirmStyle()">확인</button>
         </div>
@@ -128,20 +132,19 @@
         <p>도움말</p>
         <div id="readme">
           <p>
-            기본 조작법은 다음과 같습니다.<br><br>
-            좌/우 이동 : 키보드 좌/우<br>
-            반시계/시계 방향 회전 : Z / X<br>
-            소프트드랍 : 키보드 하<br>
-            하드드랍 : Space<br>
-            홀드 : Shift<br>
+            '설정' 에서 기본 조작법 확인<br>
+            F3 : 진행중인 게임 중단
+            F4 : 게임 시작, 빠른 재시작
+            P : 일시중지 / 해제
           </p>
-          <p>Copyrightⓒ2021 Yongdori All rights reserved.</p>
+          <p>Copyrightⓒ2022 Yongdori All rights reserved.</p>
         </div>
         <div>
           <button onclick="showHelpWindow(false)">닫기</button>
         </div>
       </div>
     </div>
+    <div id="pauseWindow" class="hidden">PAUSED</div>
   </body>
   <script type="text/javascript" src="Tetris.js"></script>
 </html>

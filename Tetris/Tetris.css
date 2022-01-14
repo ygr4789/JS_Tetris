@@ -1,5 +1,6 @@
 :root {
   --t-purple: #AF2989;
+  --i-cyan: #0F9BD7;
   --light-purple: #FFE0F6;
   --dark-gray: #1B1D1F;
   --normal-gray: #787276;
@@ -210,7 +211,7 @@ button { cursor: pointer; }
   color: var(--normal-gray);
   font-size: 10pt;
 }
-.popup label {
+.popup input[type="radio"] + label {
   box-sizing: border-box;
   display: inline-block;
   color: var(--normal-gray);
@@ -220,7 +221,7 @@ button { cursor: pointer; }
   border-radius: 5px;
   cursor: pointer;
 }
-.popup input:checked + label {
+.popup input[type="radio"]:checked + label {
   background-color: var(--t-purple);
   border-color: var(--t-purple);
   color: white;
@@ -301,10 +302,33 @@ button { cursor: pointer; }
 }
 #styleSelectTable table td { background-color: var(--light-gray); }
 #styleSelectTable input:checked ~ table td { background-color: #E39F02; }
+#ghostSettingContainer {
+  text-align: center;
+  color: var(--normal-gray);
+  margin: 20px;
+}
+#ghostSettingContainer input:checked + label { color: var(--i-cyan); }
 
 /* help */
 #readme {
   font-size: 10pt;
   text-align: left;
   margin: 10px 20px;
+}
+
+/* pause */
+#pauseWindow {
+  background: var(--dark-gray);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0px;
+  z-index: 1;
+  font-size: 36pt;
+  font-weight: bold;
+  color: var(--normal-gray);
+  line-height: 100vh;
+  text-align: center;
 }

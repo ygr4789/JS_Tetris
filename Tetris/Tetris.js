@@ -119,9 +119,9 @@ const speedPropId = [
 const DAS = 0;
 const ARR = 1;
 const SDF = 2;
-const defaultSpeedProp = [ 133, 10, 10 ];
+const defaultSpeedProp = [ 233, 30, 10 ];
 const speedPropMin = [ 0, 0, 2 ];
-const speedPropMax = [ 1000, 100,  ];
+const speedPropMax = [ 1000, 100, 50 ];
 const speedPropDescription = [
   '좌우 이동 키 지속 입력 판정까지의 지연시간 (ms)',
   '좌우 이동 키 지속 입력시의 한 칸 당 시간간격 (ms)',
@@ -162,17 +162,36 @@ const stylePropArr = [
   ['collapse', '16px', '0px']
   ];
 var style = 0;
+var ghostIsOn = true;
+var gamePaused = false;
 
 var rankingArr;
 
 //키 입력 처리
 function keyDownEventHandler(e) {
   e.preventDefault();
-  if(e.keyCode == 115 && !gameStarted) { // F4
-    gameStarted = true;
-    startGame();
+  if(e.keyCode == 80) { // P
+    if(!gamePaused && inProcess)pauseGame();
+    else if(gamePaused) unpauseGame();
   }
-  if(!keyPressed[e.keyCode]){
+  else if(e.keyCode == 115) { // F4
+    if(!gameStarted) {
+      gameStarted = true;
+      startGame();
+    }
+    else if(inProcess && !gameFinished) {
+      gameFinish();
+      init();
+      startGame();
+    }
+  }
+  else if(e.keyCode == 114) { // F3
+    if(inProcess && !gameFinished) {
+      gameFinish();
+      init();
+    }
+  }
+  else if(!keyPressed[e.keyCode]){
     keyPressed[e.keyCode] = true;
     if(!gameFinished){
       switch (e.keyCode) { 
@@ -479,13 +498,15 @@ function confirmGameMode() {
 function showStyleWindow(visible) {
   if(document.querySelector('#styleSelectTable input[type="radio"]:checked') == null)
     document.getElementById(`style${style}`).checked = true;
+  document.getElementById('ghostCheckBox').checked = ghostIsOn;
   showPopupOfId('styleWindow', visible);
 }
 function confirmStyle() {
-  showStyleWindow(false);
   style = document.querySelector('#styleSelectTable input[type="radio"]:checked').value;
   for(var i = 0; i < stylePropArr[style].length; i++)
     document.documentElement.style.setProperty(`--block-style-property${i}`, stylePropArr[style][i]);
+  ghostIsOn = document.getElementById('ghostCheckBox').checked;
+  showStyleWindow(false);
 }
 function drawStyleSelectTable() {
   changeContentsOfId('styleSelectTable', styleSelectTableTag());
@@ -797,7 +818,7 @@ function roatateClockwise(cnt) {
       x += dx;
       currShape = nextShape;
       currDir = nextDir;
-      if (delayResetCount < delayResetLimit) lockDelayRecount();
+      if (currBlock != 3 && delayResetCount < delayResetLimit) lockDelayRecount();
       displayBlock();
       break;
     }
@@ -836,6 +857,7 @@ function moveDown() {
 
 // 블록 좌우이동
 function moveLR(dir) {
+  if(!inProcess) return;
   if (canMove(currShape, 0, dir)) {
     T_spinRule1 = false;
     if(delayResetCount > delayResetLimit) lockDelayRecount();
@@ -870,19 +892,30 @@ function isInField(y, x) {
   return y < VY && y >= 0 && x < VX && x >= 0;
 }
 function clearBlock() {
-  for (var i = 0; i < 4; i++) {
-    var by = y + currShape[i][0];
-    var bx = x + currShape[i][1];
-    if (isInField(by, bx))
-      cell('gameTable', by, bx).style.background = tileColor;
-  }
+  if(ghostIsOn) clearGhost();
+  changeTableColor(y, x, tileColor);
 }
 function displayBlock() {
+  if(ghostIsOn) displayGhost();
+  changeTableColor(y, x, blockColor[currBlock]);
+}
+function clearGhost() {
+  var dy = 0;
+  while (canMove(currShape, dy - 1, 0)) dy--;
+  changeTableColor(y + dy, x, tileColor);
+}
+function displayGhost() {
+  var dy = 0;
+  while (canMove(currShape, dy - 1, 0)) dy--;
+  changeTableColor(y + dy, x, blockColor[currBlock] + '60');
+}
+function changeTableColor(y, x, color) {
+  if(!inProcess) return;
   for (var i = 0; i < 4; i++) {
     var by = y + currShape[i][0];
     var bx = x + currShape[i][1];
     if (isInField(by, bx))
-      cell('gameTable', by, bx).style.background = blockColor[currBlock];
+      cell('gameTable', by, bx).style.background = color;
   }
 }
 
@@ -919,6 +952,15 @@ function finishField() {
       cell('gameTable', i, j).style.background = cellColor;
     }
 }
+function clearAllTimeout() {
+  clearTimeout(fallingThread);
+  clearTimeout(displayingThread);
+  clearTimeout(timeCountingThread);
+  clearTimeout(movingThread);
+  clearTimeout(delayCountingThread);
+  clearTimeout(leftDASChargingThread);
+  clearTimeout(rightDASChargingThread);
+}
 function gameoverCheck1() {
   if (canMove(currShape, 0, 0)) return false;
   else return true;
@@ -932,13 +974,7 @@ function gameoverCheck2() {
 function gameFinish() {
   gameFinished = true;
   finishField();
-  clearTimeout(fallingThread);
-  clearTimeout(displayingThread);
-  clearTimeout(timeCountingThread);
-  clearTimeout(movingThread);
-  clearTimeout(delayCountingThread);
-  clearTimeout(leftDASChargingThread);
-  clearTimeout(rightDASChargingThread);
+  clearAllTimeout();
 }
 function gameClear() {
   gameFinish();
@@ -976,11 +1012,32 @@ function gameover() {
   }, 1500)
 }
 
+// 일시정지
+function pauseGame() {
+  inProcess = false;
+  gamePaused = true;
+  clearAllTimeout();
+  changeVisibilityOfId('pauseWindow', true);
+}
+function unpauseGame() {
+  changeVisibilityOfId('pauseWindow', false);
+  gamePaused = false;
+  for (var i = 0; i < 3; i++)
+    setTimeout(changeContentsOfId, 1000 * i, 'fieldText', 3 - i);
+  setTimeout(() => {
+    inProcess = true;
+    changeContentsOfId('fieldText', 'ㅤ');
+    timeCountingThread = setInterval(timeCount, 10);
+    fallingThread = setTimeout(moveDown, delayPerLine);
+    delayCountingThread = setTimeout(lockDelayCount, 10);
+  }, 3000);
+}
+
 // 순위표 관리
 function updateRanking(newRecord, newValue) {
   if(newValue > rankingArr[rankingArr.length-1].value) {
     var newName = prompt('[ 신기록 !! ]\n\n이름을 입력하십시오 (8자 제한)');
-    newName = newName.substr(0, 8);
+    if(newName != null) newName = newName.substr(0, 8);
     var struct = { name: newName, record: newRecord, value: newValue };
     rankingArr.push(struct);
     rankingArr.sort((a, b) => { return b.value - a.value; });
