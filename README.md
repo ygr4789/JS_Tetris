@@ -1,3 +1,3 @@
-# VanillaJS_WebGame
+# VanillaJS-WebGame
 
-[Tetris](https://ygr4789.github.io/VanillaJS_WebGame/Tetris)
+[Tetris](https://ygr4789.github.io/VanillaJS-WebGame/Tetris)
